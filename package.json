@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
-    "vercel-build": "yarn install --ignore-engines && yarn build"
+    "vercel-build": "pnpm install --no-frozen-lockfile && pnpm run build"
   },
   "resolutions": {
     "react": "^19.1.1",
