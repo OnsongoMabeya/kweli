@@ -1,15 +1,19 @@
-import type { Department, SubDepartment, Service } from './governmentDepartments';
+export * from './governmentDepartments';
 
 export interface DepartmentSelection {
   departmentId: string;
+  departmentName?: string;
   subDepartmentId: string;
+  subDepartmentName?: string;
   serviceId: string;
-  customIssue?: string;
+  serviceName?: string;
   selectedIssue?: string;
+  customIssue?: string;
 }
 
 export interface FeedbackFormValues {
   phoneNumber: string;
+  email?: string;
   department: DepartmentSelection;
   description: string;
   attachments?: File[];

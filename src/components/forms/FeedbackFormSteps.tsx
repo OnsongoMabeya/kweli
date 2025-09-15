@@ -1,43 +1,41 @@
-import { VStack, HStack, Button, Box, Divider, SimpleGrid, Card, CardBody, CardHeader, FormControl, FormLabel, Radio, RadioGroup, Stack, Textarea, FormHelperText, Input, Text, Heading } from '@chakra-ui/react';
+import { VStack, HStack, Button, Box, Divider, SimpleGrid, Card, CardBody, FormControl, FormLabel, Radio, RadioGroup, Stack, Textarea, FormHelperText, Input, Text, Heading } from '@chakra-ui/react';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { governmentDepartments } from '../../types/governmentDepartments';
 import type { FeedbackFormValues } from '../../types/feedback';
 
-// Department Selection Step
 interface StepProps {
   values: FeedbackFormValues;
   setFieldValue: (field: string, value: any, shouldValidate?: boolean) => void;
-  nextStep?: () => void;
-  prevStep?: () => void;
+  nextStep: () => void;
+  prevStep: () => void;
   isSubmitting?: boolean;
 }
 
-export const DepartmentStep = ({ setFieldValue, nextStep }: StepProps) => (
+export const DepartmentStep = ({ values, setFieldValue, nextStep }: StepProps) => (
   <VStack spacing={6} align="stretch">
-    <Heading size="md">Select Government Department</Heading>
-    <Text color="gray.600">
-      Please select the government department related to your feedback or complaint.
-    </Text>
+    <Box>
+      <Heading size="md" mb={2}>Select Government Department</Heading>
+      <Text color="gray.600">
+        Please select the government department related to your feedback or complaint.
+      </Text>
+    </Box>
     
     <SimpleGrid columns={[1, 2, 3]} spacing={4} mt={4}>
       {governmentDepartments.map((dept) => (
         <Card
           key={dept.id}
-          variant="outline"
-          cursor="pointer"
-          _hover={{ borderColor: 'blue.500', shadow: 'md' }}
           onClick={() => {
             setFieldValue('department.departmentId', dept.id);
+            setFieldValue('department.departmentName', dept.name);
             nextStep();
           }}
+          cursor="pointer"
+          borderWidth={values.department.departmentId === dept.id ? '2px' : '1px'}
+          borderColor={values.department.departmentId === dept.id ? 'blue.500' : 'gray.200'}
+          _hover={{ borderColor: 'blue.300' }}
         >
-          <CardHeader pb={2}>
-            <Heading size="sm">{dept.name}</Heading>
-          </CardHeader>
-          <CardBody pt={0}>
-            <Text fontSize="sm" color="gray.600">
-              {dept.subDepartments.length} service categories
-            </Text>
+          <CardBody>
+            <Text fontWeight="medium">{dept.name}</Text>
           </CardBody>
         </Card>
       ))}
@@ -45,153 +43,139 @@ export const DepartmentStep = ({ setFieldValue, nextStep }: StepProps) => (
   </VStack>
 );
 
-// SubDepartment Selection Step
-export const SubDepartmentStep = ({ values, setFieldValue, nextStep, prevStep }: StepProps) => {
+export const SubDepartmentStep = ({ 
+  values, 
+  setFieldValue, 
+  nextStep, 
+  prevStep, 
+  isSubmitting
+}: StepProps) => {
   const selectedDept = governmentDepartments.find(d => d.id === values.department.departmentId);
   
   if (!selectedDept) {
-    if (prevStep) prevStep();
+    prevStep();
     return null;
   }
-
-  if (!selectedDept) return null;
   
   return (
     <VStack spacing={6} align="stretch">
-      <VStack align="flex-start" spacing={1} w="full">
-        <Text fontSize="sm" color="gray.500">Department</Text>
-        <Text fontWeight="medium">{selectedDept.name}</Text>
-      </VStack>
+      <Box>
+        <Text fontSize="sm" color="gray.500" mb={1}>Department</Text>
+        <Text fontWeight="medium" mb={4}>{selectedDept.name}</Text>
+        <Divider />
+      </Box>
       
-      <Divider />
-      
-      <VStack spacing={4} align="stretch">
-        <Heading size="md">Select Service Category</Heading>
-        <Text color="gray.600">
-          Choose the specific service category related to your feedback.
-        </Text>
-        
-        <SimpleGrid columns={[1, 2]} spacing={4} mt={2}>
+      <Box>
+        <Heading size="md" mb={4}>Select Sub-Department</Heading>
+        <SimpleGrid columns={[1, 2]} spacing={4}>
           {selectedDept.subDepartments.map((subDept) => (
             <Card
               key={subDept.id}
-              variant="outline"
-              cursor="pointer"
-              _hover={{ borderColor: 'blue.500', shadow: 'sm' }}
               onClick={() => {
                 setFieldValue('department.subDepartmentId', subDept.id);
+                setFieldValue('department.subDepartmentName', subDept.name);
                 nextStep();
               }}
+              cursor="pointer"
+              borderWidth={values.department.subDepartmentId === subDept.id ? '2px' : '1px'}
+              borderColor={values.department.subDepartmentId === subDept.id ? 'blue.500' : 'gray.200'}
+              _hover={{ borderColor: 'blue.300' }}
             >
               <CardBody>
                 <Text fontWeight="medium">{subDept.name}</Text>
-                <Text fontSize="sm" color="gray.600" mt={1}>
-                  {subDept.services.length} service{subDept.services.length !== 1 ? 's' : ''} available
-                </Text>
               </CardBody>
             </Card>
           ))}
         </SimpleGrid>
-      </VStack>
+      </Box>
       
-      <Button
-        leftIcon={<FiChevronLeft />}
-        variant="ghost"
-        onClick={prevStep}
-        alignSelf="flex-start"
-        mt={4}
-      >
-        Back to Departments
-      </Button>
-    </VStack>
-  );
-};
-
-// Service Selection Step
-export const ServiceStep = ({ values, setFieldValue, nextStep, prevStep }: StepProps) => {
-  const selectedDept = governmentDepartments.find(d => d.id === values.department.departmentId);
-  const selectedSubDept = selectedDept?.subDepartments.find(
-    sub => sub.id === values.department.subDepartmentId
-  );
-  
-  if (!selectedSubDept) {
-    if (prevStep) prevStep();
-    return null;
-  }
-
-  if (!selectedSubDept) return null;
-  
-  return (
-    <VStack spacing={6} align="stretch">
-      <VStack align="flex-start" spacing={1} w="full">
-        <Text fontSize="sm" color="gray.500">Service Category</Text>
-        <Text fontWeight="medium">{selectedDept?.name} / {selectedSubDept.name}</Text>
-      </VStack>
-      
-      <Divider />
-      
-      <VStack spacing={4} align="stretch">
-        <Heading size="md">Select Service</Heading>
-        <Text color="gray.600">
-          Choose the specific service you want to provide feedback about.
-        </Text>
-        
-        <RadioGroup
-          value={values.department.serviceId || ''}
-          onChange={(val: string) => setFieldValue('department.serviceId', val)}
-        >
-          <Stack spacing={4}>
-            {selectedSubDept.services.map((service) => (
-              <Card
-                key={service.id}
-                variant="outline"
-                borderWidth="1px"
-                borderRadius="md"
-                p={4}
-                cursor="pointer"
-                _hover={{ borderColor: 'blue.500' }}
-                onClick={() => setFieldValue('department.serviceId', service.id)}
-              >
-                <Radio value={service.id} w="full">
-                  <VStack align="flex-start" spacing={1} ml={2}>
-                    <Text fontWeight="medium">{service.name}</Text>
-                    {service.commonIssues && service.commonIssues.length > 0 && (
-                      <Text fontSize="sm" color="gray.600">
-                        Common issues: {service.commonIssues.slice(0, 2).join(', ')}
-                        {service.commonIssues.length > 2 ? '...' : ''}
-                      </Text>
-                    )}
-                  </VStack>
-                </Radio>
-              </Card>
-            ))}
-          </Stack>
-        </RadioGroup>
-      </VStack>
-      
-      <HStack justify="space-between" mt={4}>
-        <Button
-          leftIcon={<FiChevronLeft />}
-          variant="ghost"
-          onClick={prevStep}
-        >
+      <HStack justify="space-between" mt={8}>
+        <Button leftIcon={<FiChevronLeft />} onClick={prevStep} variant="outline">
           Back
-        </Button>
-        <Button
-          rightIcon={<FiChevronRight />}
-          colorScheme="blue"
-          isDisabled={!values.department.serviceId}
-          onClick={nextStep}
-        >
-          Continue
         </Button>
       </HStack>
     </VStack>
   );
 };
 
-// Issue Description Step
-export const IssueStep = ({ values, setFieldValue, nextStep, prevStep }: StepProps) => {
+export const ServiceStep = ({ 
+  values, 
+  setFieldValue, 
+  nextStep, 
+  prevStep, 
+  isSubmitting
+}: StepProps) => {
+  const selectedDept = governmentDepartments.find(d => d.id === values.department.departmentId);
+  const selectedSubDept = selectedDept?.subDepartments.find(
+    sub => sub.id === values.department.subDepartmentId
+  );
+  
+  if (!selectedSubDept) {
+    prevStep();
+    return null;
+  }
+  
+  const services = selectedSubDept.services || [];
+  
+  return (
+    <VStack spacing={6} align="stretch">
+      <Box>
+        <Text fontSize="sm" color="gray.500" mb={1}>Service Category</Text>
+        <Text fontWeight="medium" mb={4}>
+          {selectedDept?.name} / {selectedSubDept.name}
+        </Text>
+        <Divider />
+      </Box>
+      
+      <Box>
+        <Heading size="md" mb={4}>Select Service</Heading>
+        <RadioGroup
+          value={values.department.serviceId || ''}
+          onChange={(value) => {
+            const selectedService = services.find(s => s.id === value);
+            setFieldValue('department.serviceId', value);
+            setFieldValue('department.serviceName', selectedService?.name || '');
+          }}
+        >
+          <Stack spacing={4}>
+            {services.map((service) => (
+              <Card key={service.id}>
+                <CardBody p={4}>
+                  <Radio value={service.id}>
+                    <Text fontWeight="medium">{service.name}</Text>
+                  </Radio>
+                </CardBody>
+              </Card>
+            ))}
+          </Stack>
+        </RadioGroup>
+      </Box>
+      
+      <HStack justify="space-between" mt={8}>
+        <Button leftIcon={<FiChevronLeft />} onClick={prevStep} variant="outline">
+          Back
+        </Button>
+        <Button
+          rightIcon={<FiChevronRight />}
+          onClick={nextStep}
+          colorScheme="blue"
+          isDisabled={!values.department.serviceId}
+          isLoading={isSubmitting}
+        >
+          Next
+        </Button>
+      </HStack>
+    </VStack>
+  );
+};
+
+export const IssueStep = ({ 
+  values, 
+  setFieldValue, 
+  nextStep, 
+  prevStep, 
+  isSubmitting
+}: StepProps) => {
   const selectedDept = governmentDepartments.find(d => d.id === values.department.departmentId);
   const selectedSubDept = selectedDept?.subDepartments?.find(
     sub => sub.id === values.department.subDepartmentId
@@ -201,91 +185,100 @@ export const IssueStep = ({ values, setFieldValue, nextStep, prevStep }: StepPro
   );
   
   if (!selectedService) {
-    if (prevStep) prevStep();
+    prevStep();
     return null;
   }
-
-  if (!selectedService) return null;
+  
+  const commonIssues = selectedService.commonIssues || [];
   
   return (
     <VStack spacing={6} align="stretch">
-      <VStack align="flex-start" spacing={1} w="full">
-        <Text fontSize="sm" color="gray.500">Service</Text>
-        <Text fontWeight="medium">
+      <Box>
+        <Text fontSize="sm" color="gray.500" mb={1}>Service</Text>
+        <Text fontWeight="medium" mb={4}>
           {selectedDept?.name} / {selectedSubDept?.name} / {selectedService.name}
         </Text>
-      </VStack>
+        <Divider />
+      </Box>
       
-      <Divider />
-      
-      <VStack spacing={4} align="stretch">
-        <Heading size="md">Describe the Issue</Heading>
-        
-        {selectedService.commonIssues && selectedService.commonIssues.length > 0 && (
+      <Box>
+        <Heading size="md" mb={4}>Describe Your Issue</Heading>
+        <FormControl isRequired mb={6}>
+          <FormLabel>Issue Type</FormLabel>
           <RadioGroup
             value={values.department.selectedIssue || ''}
-            onChange={(val: string) => {
-              setFieldValue('department.selectedIssue', val);
-              setFieldValue('department.customIssue', '');
-            }}
+            onChange={(value) => setFieldValue('department.selectedIssue', value)}
           >
-            <Stack spacing={3}>
-              {selectedService.commonIssues.map((issue, idx) => (
-                <Radio key={idx} value={issue}>
-                  {issue}
-                </Radio>
+            <Stack spacing={4}>
+              {commonIssues.length > 0 && commonIssues.map((issue) => (
+                <Card key={issue}>
+                  <CardBody p={4}>
+                    <Radio value={issue}>
+                      <Text fontWeight="medium">{issue}</Text>
+                    </Radio>
+                  </CardBody>
+                </Card>
               ))}
-              <Radio value="_custom">
-                Other (please specify)
-              </Radio>
+              <Card>
+                <CardBody p={4}>
+                  <Radio value="other">
+                    <Text fontWeight="medium">Other (please specify)</Text>
+                  </Radio>
+                </CardBody>
+              </Card>
             </Stack>
           </RadioGroup>
-        )}
+        </FormControl>
         
-        {(values.department.selectedIssue === '_custom' || 
-          !selectedService.commonIssues || 
-          selectedService.commonIssues.length === 0) && (
-          <FormControl mt={4}>
-            <FormLabel>Describe your issue in detail</FormLabel>
+        {values.department.selectedIssue === 'other' && (
+          <FormControl isRequired mb={6}>
+            <FormLabel>Please describe your issue</FormLabel>
             <Textarea
               value={values.department.customIssue || ''}
               onChange={(e) => setFieldValue('department.customIssue', e.target.value)}
-              placeholder="Please provide a clear description of the issue..."
-              rows={4}
+              placeholder="Please provide details about your issue"
             />
-            <FormHelperText>
-              Be as specific as possible to help us address your concern effectively.
-            </FormHelperText>
           </FormControl>
         )}
-      </VStack>
+        
+        <FormControl isRequired>
+          <FormLabel>Description</FormLabel>
+          <Textarea
+            value={values.description}
+            onChange={(e) => setFieldValue('description', e.target.value)}
+            placeholder="Please provide a detailed description of your feedback or complaint"
+            minH="150px"
+          />
+          <FormHelperText>
+            Be as specific as possible. Include relevant dates, names, and any reference numbers if available.
+          </FormHelperText>
+        </FormControl>
+      </Box>
       
-      <HStack justify="space-between" mt={4}>
-        <Button
-          leftIcon={<FiChevronLeft />}
-          variant="ghost"
-          onClick={prevStep}
-        >
+      <HStack justify="space-between" mt={8}>
+        <Button leftIcon={<FiChevronLeft />} onClick={prevStep} variant="outline">
           Back
         </Button>
         <Button
           rightIcon={<FiChevronRight />}
-          colorScheme="blue"
-          isDisabled={
-            !values.department.selectedIssue && 
-            !values.department.customIssue?.trim()
-          }
           onClick={nextStep}
+          colorScheme="blue"
+          isDisabled={!values.description || (!values.department.selectedIssue && !values.department.customIssue)}
+          isLoading={isSubmitting}
         >
-          Continue
+          Next
         </Button>
       </HStack>
     </VStack>
   );
 };
 
-// Contact Information Step
-export const ContactStep = ({ values, setFieldValue, prevStep, isSubmitting }: StepProps & { isSubmitting: boolean }) => {
+export const ContactStep = ({ 
+  values, 
+  setFieldValue, 
+  prevStep, 
+  isSubmitting
+}: StepProps) => {
   return (
     <VStack spacing={6} align="stretch">
       <VStack align="flex-start" spacing={1} w="full">
@@ -297,51 +290,66 @@ export const ContactStep = ({ values, setFieldValue, prevStep, isSubmitting }: S
         </Box>
       </VStack>
       
-      <Divider />
-      
-      <VStack spacing={4} align="stretch">
-        <Heading size="md">Contact Information</Heading>
-        <Text color="gray.600">
-          Please provide your contact information so we can follow up on your feedback.
+      <Box>
+        <Heading size="md" mb={4}>Your Contact Information</Heading>
+        <Text color="gray.600" mb={6}>
+          Please provide your phone number so we can follow up on your feedback if needed.
         </Text>
         
-        <FormControl isRequired>
+        <FormControl isRequired mb={6}>
           <FormLabel>Phone Number</FormLabel>
           <Input
             type="tel"
-            placeholder="+254 700 000000"
             value={values.phoneNumber}
             onChange={(e) => setFieldValue('phoneNumber', e.target.value)}
+            placeholder="+254 7XX XXX XXX"
+            maxLength={13}
           />
           <FormHelperText>
-            We'll use this to contact you about your feedback.
+            We'll only use this to contact you about your feedback.
+          </FormHelperText>
+        </FormControl>
+        
+        <FormControl mb={6}>
+          <FormLabel>Email (Optional)</FormLabel>
+          <Input
+            type="email"
+            value={values.email || ''}
+            onChange={(e) => setFieldValue('email', e.target.value)}
+            placeholder="your.email@example.com"
+          />
+          <FormHelperText>
+            Provide an email if you'd prefer to be contacted this way.
           </FormHelperText>
         </FormControl>
         
         <FormControl>
-          <FormLabel>Additional Notes (Optional)</FormLabel>
-          <Textarea
-            placeholder="Add any additional information that might be helpful..."
-            rows={4}
-            value={values.description}
-            onChange={(e) => setFieldValue('description', e.target.value)}
-          />
+          <FormLabel>Attachments (Optional)</FormLabel>
+          <Box
+            borderWidth={1}
+            borderStyle="dashed"
+            borderRadius="md"
+            p={8}
+            textAlign="center"
+            cursor="pointer"
+            _hover={{ bg: 'gray.50' }}
+          >
+            <Text>Drag & drop files here or click to browse</Text>
+            <Text fontSize="sm" color="gray.500" mt={2}>
+              Max file size: 5MB. Supported formats: JPG, PNG, PDF
+            </Text>
+          </Box>
         </FormControl>
-      </VStack>
+      </Box>
       
-      <HStack justify="space-between" mt={4}>
-        <Button
-          leftIcon={<FiChevronLeft />}
-          variant="ghost"
-          onClick={prevStep}
-        >
+      <HStack justify="space-between" mt={8}>
+        <Button leftIcon={<FiChevronLeft />} onClick={prevStep} variant="outline">
           Back
         </Button>
         <Button
           type="submit"
           colorScheme="blue"
           isLoading={isSubmitting}
-          loadingText="Submitting..."
           isDisabled={!values.phoneNumber}
         >
           Submit Feedback

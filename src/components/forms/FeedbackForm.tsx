@@ -5,9 +5,7 @@ import { useState } from 'react';
 import { useSubmitFeedback } from '../../hooks/useFeedback';
 import { 
   Box, 
-  VStack, 
   useToast, 
-  Progress, 
   useSteps,
   Step,
   StepIndicator,
@@ -37,46 +35,72 @@ const steps = [
   { title: 'Contact', description: 'Your details' },
 ];
 
-const validationSchema = Yup.object().shape({
+const StepComponent = [
+  DepartmentStep,
+  SubDepartmentStep,
+  ServiceStep,
+  IssueStep,
+  ContactStep,
+];
+
+const validationSchema = Yup.object({
   phoneNumber: Yup.string()
     .matches(
       /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,3}[-\s.]?[0-9]{1,4}[-\s.]?[0-9]{1,4}$/,
       'Please enter a valid phone number'
     )
     .required('Phone number is required'),
-  department: Yup.object().shape({
+  email: Yup.string()
+    .email('Please enter a valid email')
+    .optional(),
+  description: Yup.string().optional(),
+  currentStep: Yup.number().required(),
+  department: Yup.object({
     departmentId: Yup.string().required('Department is required'),
+    departmentName: Yup.string().optional(),
     subDepartmentId: Yup.string().required('Service category is required'),
+    subDepartmentName: Yup.string().optional(),
     serviceId: Yup.string().required('Service is required'),
-    selectedIssue: Yup.string().when('customIssue', {
-      is: (val: string) => !val || val.trim() === '',
-      then: (schema) => schema.required('Please select or describe an issue'),
-      otherwise: (schema) => schema.notRequired(),
-    }),
-    customIssue: Yup.string().when('selectedIssue', {
-      is: (val: string) => !val || val === '_custom',
-      then: (schema) => 
-        schema
-          .min(10, 'Please provide more details (at least 10 characters)')
-          .required('Please describe your issue'),
-      otherwise: (schema) => schema.notRequired(),
-    }),
+    serviceName: Yup.string().optional(),
+    selectedIssue: Yup.string().test(
+      'issue-required',
+      'Please select or describe an issue',
+      function(value) {
+        const { customIssue } = this.parent;
+        return !!(value || (customIssue && customIssue.trim() !== ''));
+      }
+    ),
+    customIssue: Yup.string()
+      .when('selectedIssue', {
+        is: (val: string) => val === '_custom',
+        then: (schema) => 
+          schema
+            .min(10, 'Please provide more details (at least 10 characters)')
+            .required('Please describe your issue'),
+        otherwise: (schema) => schema.notRequired(),
+      })
+      .optional(),
   }),
   description: Yup.string().notRequired(),
 });
 
 const initialValues: FeedbackFormValues = {
   phoneNumber: '',
+  email: '',
   description: '',
   currentStep: 0,
   department: {
     departmentId: '',
+    departmentName: '',
     subDepartmentId: '',
+    subDepartmentName: '',
     serviceId: '',
+    serviceName: '',
     selectedIssue: '',
     customIssue: '',
   },
   priority: 'medium',
+  attachments: [],
 };
 
 const FeedbackForm = () => {
@@ -84,7 +108,7 @@ const FeedbackForm = () => {
   const { mutate: submitFeedback } = useSubmitFeedback();
   const [activeStep, setActiveStep] = useState(0);
   
-  const { activeStep: step, setActiveStep: setStep } = useSteps({
+  const { setActiveStep: setStep } = useSteps({
     index: 0,
     count: steps.length,
   });
@@ -98,43 +122,45 @@ const FeedbackForm = () => {
     setActiveStep((prev) => Math.max(prev - 1, 0));
     setStep((prev) => Math.max(prev - 1, 0));
   };
+  
+  const isMobile = useBreakpointValue({ base: true, md: false });
 
   const handleSubmit = (
     values: FeedbackFormValues,
     { setSubmitting, resetForm }: FormikHelpers<FeedbackFormValues>
   ) => {
     // Prepare the feedback data for submission
-    const feedbackData = {
+    const submissionData = {
       ...values,
-      currentStep: 0, // Reset step for the form
-      status: 'new' as const,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      referenceNumber: `REF-${Date.now()}`,
+      department: {
+        ...values.department,
+        // Ensure we're not sending empty strings for optional fields
+        customIssue: values.department.customIssue || undefined,
+        selectedIssue: values.department.selectedIssue || undefined,
+      },
+      // Remove any undefined values
+      ...(values.email ? { email: values.email } : {}),
     };
 
-    submitFeedback(feedbackData, {
+    submitFeedback(submissionData, {
       onSuccess: () => {
         toast({
           title: 'Feedback submitted!',
-          description: 'Thank you for your valuable feedback. Your reference number is ' + feedbackData.referenceNumber,
+          description: 'Thank you for your valuable feedback.',
           status: 'success',
-          duration: 8000,
+          duration: 5000,
           isClosable: true,
         });
-        resetForm({
-          values: {
-            ...initialValues,
-            currentStep: 0,
-          },
-        });
+        resetForm();
+        // Reset to first step after successful submission
         setActiveStep(0);
         setStep(0);
       },
-      onError: () => {
+      onError: (error: unknown) => {
+        console.error('Submission error:', error);
         toast({
           title: 'Submission failed',
-          description: 'There was an error submitting your feedback. Please try again.',
+          description: error instanceof Error ? error.message : 'Please try again later.',
           status: 'error',
           duration: 5000,
           isClosable: true,
@@ -146,7 +172,7 @@ const FeedbackForm = () => {
     });
   };
 
-  const isMobile = useBreakpointValue({ base: true, md: false });
+  const CurrentStepComponent = StepComponent[activeStep];
 
   return (
     <Box maxW="3xl" mx="auto" p={4}>
@@ -158,94 +184,36 @@ const FeedbackForm = () => {
         validateOnChange={false}
         validateOnBlur={false}
       >
-        {({ values, setFieldValue, isSubmitting }) => (
+        {(formik) => (
           <Form>
-            <VStack spacing={8}>
-              {/* Progress Stepper */}
-              <Box w="full" py={4}>
-                <Stepper
-                  index={step}
-                  size={isMobile ? 'sm' : 'md'}
-                  colorScheme="blue"
-                  orientation={isMobile ? 'vertical' : 'horizontal'}
-                  gap={isMobile ? '0' : '4'}
-                >
-                  {steps.map((step, index) => (
-                    <Step key={index}>
-                      <StepIndicator>
-                        <StepStatus
-                          complete={<StepIcon />}
-                          incomplete={<StepNumber />}
-                          active={<StepNumber />}
-                        />
-                      </StepIndicator>
-                      {!isMobile && (
-                        <Box flexShrink='0'>
-                          <StepTitle>{step.title}</StepTitle>
-                          <StepDescription>{step.description}</StepDescription>
-                        </Box>
-                      )}
-                      {!isMobile && index < steps.length - 1 && <StepSeparator />}
-                    </Step>
-                  ))}
-                </Stepper>
-                <Progress 
-                  value={(step / (steps.length - 1)) * 100} 
-                  size='xs' 
-                  colorScheme='blue' 
-                  mt={4} 
-                  hasStripe 
-                  isAnimated 
-                />
-              </Box>
+            <Stepper index={activeStep} orientation={isMobile ? 'vertical' : 'horizontal'} mb={8}>
+              {steps.map((step, index) => (
+                <Step key={index}>
+                  <StepIndicator>
+                    <StepStatus
+                      complete={<StepIcon />}
+                      incomplete={<StepNumber />}
+                      active={<StepNumber />}
+                    />
+                  </StepIndicator>
+                  <Box flexShrink="0">
+                    <StepTitle>{step.title}</StepTitle>
+                    <StepDescription>{step.description}</StepDescription>
+                  </Box>
+                  <StepSeparator />
+                </Step>
+              ))}
+            </Stepper>
 
-              {/* Form Steps */}
-              <Box w="full" minH="400px">
-                {activeStep === 0 && (
-                  <DepartmentStep 
-                    values={values} 
-                    setFieldValue={setFieldValue} 
-                    nextStep={handleNext}
-                  />
-                )}
-                
-                {activeStep === 1 && (
-                  <SubDepartmentStep 
-                    values={values} 
-                    setFieldValue={setFieldValue} 
-                    nextStep={handleNext}
-                    prevStep={handlePrev}
-                  />
-                )}
-                
-                {activeStep === 2 && (
-                  <ServiceStep 
-                    values={values} 
-                    setFieldValue={setFieldValue} 
-                    nextStep={handleNext}
-                    prevStep={handlePrev}
-                  />
-                )}
-                
-                {activeStep === 3 && (
-                  <IssueStep 
-                    values={values} 
-                    setFieldValue={setFieldValue} 
-                    nextStep={handleNext}
-                    prevStep={handlePrev}
-                  />
-                )}
-                
-                {activeStep === 4 && (
-                  <ContactStep 
-                    values={values} 
-                    setFieldValue={setFieldValue} 
-                    prevStep={handlePrev}
-                    isSubmitting={isSubmitting}
-                  />
-                )}
-              </Box>
-            </VStack>
+            <Box minH="400px">
+              <CurrentStepComponent 
+                values={formik.values}
+                setFieldValue={formik.setFieldValue}
+                nextStep={handleNext}
+                prevStep={handlePrev}
+                isSubmitting={formik.isSubmitting}
+              />
+            </Box>
           </Form>
         )}
       </Formik>

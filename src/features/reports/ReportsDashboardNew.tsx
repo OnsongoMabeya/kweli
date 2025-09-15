@@ -35,15 +35,17 @@ const statusColorMap: Record<string, string> = {
   'in-progress': 'orange',
   resolved: 'green',
   rejected: 'red',
-};
+} as const;
 
-const typeColorMap: Record<string, string> = {
+type FeedbackType = 'service-delivery' | 'policy-issue' | 'public-safety' | 'infrastructure' | 'other';
+
+const typeColorMap: Record<FeedbackType, string> = {
   'service-delivery': 'blue',
   'policy-issue': 'red',
   'public-safety': 'green',
   'infrastructure': 'orange',
   'other': 'gray',
-};
+} as const;
 
 export const ReportsDashboardNew = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -53,12 +55,12 @@ export const ReportsDashboardNew = () => {
   const { data: feedbacks = [], isLoading: isLoadingFeedbacks } = useFeedbacks();
   const { data: stats, isLoading: isLoadingStats } = useFeedbackStats();
   
-  const filteredFeedbacks: Feedback[] = useMemo(() => {
+  const filteredFeedbacks = useMemo(() => {
     return feedbacks.filter((feedback) => {
       const matchesSearch = feedback.phoneNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          feedback.message.toLowerCase().includes(searchTerm.toLowerCase());
+                          (feedback.description?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
       const matchesStatus = selectedStatus === 'all' || feedback.status === selectedStatus;
-      const matchesType = selectedType === 'all' || feedback.type === selectedType;
+      const matchesType = selectedType === 'all' || feedback.department?.serviceId === selectedType;
 
       return matchesSearch && matchesStatus && matchesType;
     });
@@ -145,9 +147,10 @@ export const ReportsDashboardNew = () => {
               onChange={(e) => setSelectedType(e.target.value)}
             >
               <option value="all">All Types</option>
-              <option value="feedback">General Feedback</option>
-              <option value="bug">Bug Report</option>
-              <option value="feature">Feature Request</option>
+              <option value="service-delivery">Service Delivery</option>
+              <option value="policy-issue">Policy Issue</option>
+              <option value="public-safety">Public Safety</option>
+              <option value="infrastructure">Infrastructure</option>
               <option value="other">Other</option>
             </Select>
           </Flex>
@@ -178,31 +181,22 @@ export const ReportsDashboardNew = () => {
                         <Text fontWeight="medium">{feedback.phoneNumber}</Text>
                       </Td>
                       <Td>
-                        <Badge colorScheme={typeColorMap[feedback.type] || 'gray'}>
-                          {(() => {
-                            const typeLabels: Record<string, string> = {
-                              'service-delivery': 'Service Delivery',
-                              'policy-issue': 'Policy Issue',
-                              'public-safety': 'Public Safety',
-                              'infrastructure': 'Infrastructure',
-                              'other': 'Other'
-                            };
-                            return typeLabels[feedback.type] || feedback.type;
-                          })()}
+                        <Badge colorScheme={typeColorMap[feedback.department?.serviceId as FeedbackType] || 'gray'}>
+                          {feedback.department?.serviceId || 'N/A'}
                         </Badge>
                       </Td>
                       <Td>
                         <Badge colorScheme={statusColorMap[feedback.status]}>
                           {feedback.status.split('-').map(word => 
-                            (word as string).charAt(0).toUpperCase() + (word as string).slice(1)
+                            word.charAt(0).toUpperCase() + word.slice(1)
                           ).join(' ')}
                         </Badge>
                       </Td>
                       <Td whiteSpace="nowrap">
-                        {new Date(feedback.createdAt).toLocaleDateString()}
+                        {feedback.createdAt ? new Date(feedback.createdAt).toLocaleDateString() : 'N/A'}
                       </Td>
-                      <Td maxW="300px" isTruncated title={feedback.message}>
-                        {feedback.message}
+                      <Td maxW="300px" isTruncated title={feedback.description}>
+                        {feedback.description || 'No description'}
                       </Td>
                     </Tr>
                   ))
