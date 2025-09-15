@@ -80,8 +80,7 @@ const validationSchema = Yup.object({
         otherwise: (schema) => schema.notRequired(),
       })
       .optional(),
-  }),
-  description: Yup.string().notRequired(),
+  })
 });
 
 const initialValues: FeedbackFormValues = {
