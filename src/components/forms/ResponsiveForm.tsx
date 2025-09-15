@@ -13,16 +13,16 @@ import {
   VStack, 
   HStack, 
   useBreakpointValue,
-  FormControlProps,
-  InputProps,
-  TextareaProps,
-  SelectProps,
-  CheckboxProps,
-  RadioProps,
-  SwitchProps,
-  StackDirection
+  type FormControlProps,
+  type InputProps,
+  type TextareaProps,
+  type SelectProps,
+  type CheckboxProps,
+  type RadioProps,
+  type SwitchProps,
+  type StackDirection
 } from '@chakra-ui/react';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { FieldError, UseFormRegister } from 'react-hook-form';
 
 type InputType = 'text' | 'email' | 'password' | 'number' | 'tel' | 'url' | 'date' | 'time' | 'datetime-local';

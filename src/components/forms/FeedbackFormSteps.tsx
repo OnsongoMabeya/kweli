@@ -6,12 +6,15 @@ import type { FeedbackFormValues } from '../../types/feedback';
 interface StepProps {
   values: FeedbackFormValues;
   setFieldValue: (field: string, value: any, shouldValidate?: boolean) => void;
-  nextStep: () => void;
-  prevStep: () => void;
+  onNext: () => void;
+  onPrev: () => void;
   isSubmitting?: boolean;
+  errors?: any;
+  touched?: any;
+  formik?: any;
 }
 
-export const DepartmentStep = ({ values, setFieldValue, nextStep }: StepProps) => (
+export const DepartmentStep = ({ values, setFieldValue, onNext }: StepProps) => (
   <VStack spacing={6} align="stretch">
     <Box>
       <Heading size="md" mb={2}>Select Government Department</Heading>
@@ -27,7 +30,7 @@ export const DepartmentStep = ({ values, setFieldValue, nextStep }: StepProps) =
           onClick={() => {
             setFieldValue('department.departmentId', dept.id);
             setFieldValue('department.departmentName', dept.name);
-            nextStep();
+            onNext();
           }}
           cursor="pointer"
           borderWidth={values.department.departmentId === dept.id ? '2px' : '1px'}
@@ -46,14 +49,14 @@ export const DepartmentStep = ({ values, setFieldValue, nextStep }: StepProps) =
 export const SubDepartmentStep = ({ 
   values, 
   setFieldValue, 
-  nextStep, 
-  prevStep, 
+  onNext, 
+  onPrev, 
   isSubmitting = false
 }: StepProps) => {
   const selectedDept = governmentDepartments.find(d => d.id === values.department.departmentId);
   
   if (!selectedDept) {
-    prevStep();
+    onPrev();
     return null;
   }
   
@@ -74,7 +77,7 @@ export const SubDepartmentStep = ({
               onClick={() => {
                 setFieldValue('department.subDepartmentId', subDept.id);
                 setFieldValue('department.subDepartmentName', subDept.name);
-                nextStep();
+                onNext();
               }}
               cursor="pointer"
               borderWidth={values.department.subDepartmentId === subDept.id ? '2px' : '1px'}
@@ -90,12 +93,12 @@ export const SubDepartmentStep = ({
       </Box>
       
       <HStack justify="space-between" mt={8}>
-        <Button leftIcon={<FiChevronLeft />} onClick={prevStep} variant="outline">
+        <Button leftIcon={<FiChevronLeft />} onClick={onPrev} variant="outline">
           Back
         </Button>
         <Button
           rightIcon={<FiChevronRight />}
-          onClick={nextStep}
+          onClick={onNext}
           colorScheme="blue"
           isDisabled={!values.department.subDepartmentId}
           isLoading={isSubmitting}
@@ -111,8 +114,8 @@ export const SubDepartmentStep = ({
 export const ServiceStep = ({ 
   values, 
   setFieldValue, 
-  nextStep, 
-  prevStep, 
+  onNext, 
+  onPrev, 
   isSubmitting
 }: StepProps) => {
   const selectedDept = governmentDepartments.find(d => d.id === values.department.departmentId);
@@ -121,7 +124,7 @@ export const ServiceStep = ({
   );
   
   if (!selectedSubDept) {
-    prevStep();
+    onPrev();
     return null;
   }
   
@@ -162,12 +165,12 @@ export const ServiceStep = ({
       </Box>
       
       <HStack justify="space-between" mt={8}>
-        <Button leftIcon={<FiChevronLeft />} onClick={prevStep} variant="outline">
+        <Button leftIcon={<FiChevronLeft />} onClick={onPrev} variant="outline">
           Back
         </Button>
         <Button
           rightIcon={<FiChevronRight />}
-          onClick={nextStep}
+          onClick={onNext}
           colorScheme="blue"
           isDisabled={!values.department.serviceId}
           isLoading={isSubmitting}
@@ -182,8 +185,8 @@ export const ServiceStep = ({
 export const IssueStep = ({ 
   values, 
   setFieldValue, 
-  nextStep, 
-  prevStep, 
+  onNext, 
+  onPrev, 
   isSubmitting
 }: StepProps) => {
   const selectedDept = governmentDepartments.find(d => d.id === values.department.departmentId);
@@ -195,7 +198,7 @@ export const IssueStep = ({
   );
   
   if (!selectedService) {
-    prevStep();
+    onPrev();
     return null;
   }
   
@@ -266,12 +269,12 @@ export const IssueStep = ({
       </Box>
       
       <HStack justify="space-between" mt={8}>
-        <Button leftIcon={<FiChevronLeft />} onClick={prevStep} variant="outline">
+        <Button leftIcon={<FiChevronLeft />} onClick={onPrev} variant="outline">
           Back
         </Button>
         <Button
           rightIcon={<FiChevronRight />}
-          onClick={nextStep}
+          onClick={onNext}
           colorScheme="blue"
           isDisabled={!values.description || (!values.department.selectedIssue && !values.department.customIssue)}
           isLoading={isSubmitting}
@@ -286,7 +289,7 @@ export const IssueStep = ({
 export const ContactStep = ({ 
   values, 
   setFieldValue, 
-  prevStep, 
+  onPrev, 
   isSubmitting
 }: StepProps) => {
   return (
@@ -353,7 +356,7 @@ export const ContactStep = ({
       </Box>
       
       <HStack justify="space-between" mt={8}>
-        <Button leftIcon={<FiChevronLeft />} onClick={prevStep} variant="outline">
+        <Button leftIcon={<FiChevronLeft />} onClick={onPrev} variant="outline">
           Back
         </Button>
         <Button

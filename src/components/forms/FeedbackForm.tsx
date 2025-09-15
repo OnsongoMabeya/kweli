@@ -1,7 +1,7 @@
 import { Formik, Form } from 'formik';
 import type { FormikHelpers } from 'formik';
 import * as Yup from 'yup';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useSubmitFeedback } from '../../hooks/useFeedback';
 import { 
   Box, 
@@ -9,15 +9,19 @@ import {
   useSteps,
   Step,
   StepIndicator,
-  StepStatus,
-  StepIcon,
   StepNumber,
   StepTitle,
   StepDescription,
   Stepper,
   StepSeparator,
-  useBreakpointValue
+  useColorModeValue,
+  Container,
+  HStack,
+  Button,
+  useMediaQuery,
+  type StackDirection,
 } from '@chakra-ui/react';
+import { FiChevronLeft, FiChevronRight, FiSend } from 'react-icons/fi';
 import type { FeedbackFormValues } from '../../types/feedback';
 import { 
   DepartmentStep, 
@@ -35,15 +39,16 @@ const steps = [
   { title: 'Contact', description: 'Your details' },
 ];
 
-const StepComponent = [
+const StepComponents = [
   DepartmentStep,
   SubDepartmentStep,
   ServiceStep,
   IssueStep,
   ContactStep,
-];
+] as const;
 
-const validationSchema = Yup.object({
+// Create a base schema without the cyclic dependency
+const baseSchema = {
   phoneNumber: Yup.string()
     .matches(
       /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,3}[-\s.]?[0-9]{1,4}[-\s.]?[0-9]{1,4}$/,
@@ -55,6 +60,10 @@ const validationSchema = Yup.object({
     .optional(),
   description: Yup.string().optional(),
   currentStep: Yup.number().required(),
+  priority: Yup.string()
+    .oneOf(['low', 'medium', 'high'], 'Invalid priority')
+    .default('medium'),
+  attachments: Yup.array().of(Yup.mixed()),
   department: Yup.object({
     departmentId: Yup.string().required('Department is required'),
     departmentName: Yup.string().optional(),
@@ -62,26 +71,35 @@ const validationSchema = Yup.object({
     subDepartmentName: Yup.string().optional(),
     serviceId: Yup.string().required('Service is required'),
     serviceName: Yup.string().optional(),
-    selectedIssue: Yup.string().test(
-      'issue-required',
-      'Please select or describe an issue',
-      function(value) {
-        const { customIssue } = this.parent;
-        return !!(value || (customIssue && customIssue.trim() !== ''));
-      }
-    ),
-    customIssue: Yup.string()
-      .when('selectedIssue', {
+    selectedIssue: Yup.string().optional(),
+    customIssue: Yup.string().optional()
+  })
+};
+
+// Create the validation schema with the dynamic part
+const createValidationSchema = () => {
+  return Yup.object({
+    ...baseSchema,
+    department: Yup.object({
+      ...baseSchema.department.fields,
+      selectedIssue: Yup.string().test(
+        'issue-required',
+        'Please select or describe an issue',
+        function(value) {
+          const { customIssue } = this.parent;
+          return !!(value || (customIssue && customIssue.trim() !== ''));
+        }
+      ),
+      customIssue: Yup.string().when('selectedIssue', {
         is: (val: string) => val === '_custom',
-        then: (schema) => 
-          schema
-            .min(10, 'Please provide more details (at least 10 characters)')
-            .required('Please describe your issue'),
+        then: (schema) => schema
+          .min(10, 'Please provide more details (at least 10 characters)')
+          .required('Please describe your issue'),
         otherwise: (schema) => schema.notRequired(),
       })
-      .optional(),
-  })
-});
+    })
+  });
+};
 
 const initialValues: FeedbackFormValues = {
   phoneNumber: '',
@@ -106,116 +124,151 @@ const FeedbackForm = () => {
   const toast = useToast();
   const { mutate: submitFeedback } = useSubmitFeedback();
   const [activeStep, setActiveStep] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isMobile] = useMediaQuery('(max-width: 768px)');
   
   const { setActiveStep: setStep } = useSteps({
     index: 0,
     count: steps.length,
   });
 
+  // Memoize the validation schema to prevent recreation on each render
+  const validationSchema = useMemo(() => createValidationSchema(), []);
+
   const handleNext = () => {
-    setActiveStep((prev) => Math.min(prev + 1, steps.length - 1));
-    setStep((prev) => Math.min(prev + 1, steps.length - 1));
+    const nextStep = Math.min(activeStep + 1, steps.length - 1);
+    setActiveStep(nextStep);
+    setStep(nextStep);
   };
 
   const handlePrev = () => {
-    setActiveStep((prev) => Math.max(prev - 1, 0));
-    setStep((prev) => Math.max(prev - 1, 0));
+    const prevStep = Math.max(activeStep - 1, 0);
+    setActiveStep(prevStep);
+    setStep(prevStep);
   };
-  
-  const isMobile = useBreakpointValue({ base: true, md: false });
 
-  const handleSubmit = (
+  const handleStepChange = (step: number) => {
+    setActiveStep(step);
+    setStep(step);
+  };
+
+  const handleFormSubmit = async (
     values: FeedbackFormValues,
-    { setSubmitting, resetForm }: FormikHelpers<FeedbackFormValues>
+    { resetForm }: FormikHelpers<FeedbackFormValues>
   ) => {
-    // Prepare the feedback data for submission
-    const submissionData = {
-      ...values,
-      department: {
-        ...values.department,
-        // Ensure we're not sending empty strings for optional fields
-        customIssue: values.department.customIssue || undefined,
-        selectedIssue: values.department.selectedIssue || undefined,
-      },
-      // Remove any undefined values
-      ...(values.email ? { email: values.email } : {}),
-    };
-
-    submitFeedback(submissionData, {
-      onSuccess: () => {
-        toast({
-          title: 'Feedback submitted!',
-          description: 'Thank you for your valuable feedback.',
-          status: 'success',
-          duration: 5000,
-          isClosable: true,
-        });
-        resetForm();
-        // Reset to first step after successful submission
-        setActiveStep(0);
-        setStep(0);
-      },
-      onError: (error: unknown) => {
-        console.error('Submission error:', error);
-        toast({
-          title: 'Submission failed',
-          description: error instanceof Error ? error.message : 'Please try again later.',
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-        });
-      },
-      onSettled: () => {
-        setSubmitting(false);
-      },
-    });
+    setIsSubmitting(true);
+    try {
+      await submitFeedback(values);
+      
+      // Show success message
+      toast({
+        title: 'Feedback submitted',
+        description: 'Thank you for your feedback!',
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+        position: 'top',
+      });
+      
+      // Reset form and go to first step
+      resetForm();
+      setActiveStep(0);
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to submit feedback. Please try again.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+        position: 'top',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const CurrentStepComponent = StepComponent[activeStep];
+  const CurrentStepComponent = StepComponents[activeStep];
+  const isLastStep = activeStep === steps.length - 1;
+  const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const formBg = useColorModeValue('white', 'gray.800');
+  const pageBg = useColorModeValue('gray.50', 'gray.900');
+  const formShadow = useColorModeValue('md', 'dark-lg');
 
   return (
-    <Box maxW="3xl" mx="auto" p={4}>
-      <Formik
-        initialValues={initialValues}
-        validationSchema={validationSchema}
-        onSubmit={handleSubmit}
-        validateOnMount={false}
-        validateOnChange={false}
-        validateOnBlur={false}
-      >
-        {(formik) => (
-          <Form>
-            <Stepper index={activeStep} orientation={isMobile ? 'vertical' : 'horizontal'} mb={8}>
-              {steps.map((step, index) => (
-                <Step key={index}>
-                  <StepIndicator>
-                    <StepStatus
-                      complete={<StepIcon />}
-                      incomplete={<StepNumber />}
-                      active={<StepNumber />}
+    <Box minH="100vh" bg={pageBg} py={8}>
+      <Container maxW="7xl" h="100%" px={{ base: 4, md: 6, lg: 8 }}>
+        <Formik
+          initialValues={initialValues}
+          validationSchema={validationSchema}
+          onSubmit={handleFormSubmit}
+          validateOnMount={false}
+          validateOnChange={false}
+        >
+          {(formik) => (
+            <Form>
+              <Box 
+                bg={formBg}
+                borderRadius="lg"
+                p={6}
+                boxShadow={formShadow}
+                borderWidth="1px"
+                borderColor={borderColor}
+                minH="calc(100vh - 64px)"
+                display="flex"
+                flexDirection="column"
+              >
+                <Box mt={8} flex="1" display="flex" flexDirection="column">
+                  <Box flex="1">
+                    <CurrentStepComponent 
+                      values={formik.values}
+                      setFieldValue={formik.setFieldValue}
+                      errors={formik.errors}
+                      touched={formik.touched}
+                      isSubmitting={isSubmitting}
+                      formik={formik}
+                      onNext={handleNext}
+                      onPrev={handlePrev}
                     />
-                  </StepIndicator>
-                  <Box flexShrink="0">
-                    <StepTitle>{step.title}</StepTitle>
-                    <StepDescription>{step.description}</StepDescription>
                   </Box>
-                  <StepSeparator />
-                </Step>
-              ))}
-            </Stepper>
-
-            <Box minH="400px">
-              <CurrentStepComponent 
-                values={formik.values}
-                setFieldValue={formik.setFieldValue}
-                nextStep={handleNext}
-                prevStep={handlePrev}
-                isSubmitting={formik.isSubmitting}
-              />
-            </Box>
-          </Form>
-        )}
-      </Formik>
+                  {/* Navigation Buttons */}
+                  <HStack 
+                    mt={8} 
+                    pt={4} 
+                    borderTopWidth="1px" 
+                    borderColor={useColorModeValue('gray.200', 'gray.700')}
+                    justify={activeStep === 0 ? 'flex-end' : 'space-between'}
+                    spacing={4}
+                  >
+                    {activeStep > 0 && (
+                      <Button
+                        leftIcon={<FiChevronLeft />}
+                        onClick={handlePrev}
+                        variant="outline"
+                        isDisabled={isSubmitting}
+                      >
+                        Back
+                      </Button>
+                    )}
+                    
+                    <Button
+                      type={isLastStep ? 'submit' : 'button'}
+                      colorScheme="blue"
+                      rightIcon={isLastStep ? <FiSend /> : <FiChevronRight />}
+                      onClick={!isLastStep ? handleNext : undefined}
+                      isLoading={isSubmitting}
+                      loadingText={isLastStep ? 'Submitting...' : 'Loading...'}
+                      ml={activeStep === 0 ? 'auto' : 0}
+                    >
+                      {isLastStep ? 'Submit Feedback' : 'Next'}
+                    </Button>
+                  </HStack>
+                </Box>
+              </Box>
+            </Form>
+          )}
+        </Formik>
+      </Container>
     </Box>
   );
 };

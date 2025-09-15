@@ -1,5 +1,5 @@
-import { Card, CardBody, CardProps, useBreakpointValue } from '@chakra-ui/react';
-import { ReactNode } from 'react';
+import { Card, CardBody, type CardProps, useBreakpointValue } from '@chakra-ui/react';
+import type { ReactNode } from 'react';
 
 export interface ResponsiveCardProps extends CardProps {
   children: ReactNode;

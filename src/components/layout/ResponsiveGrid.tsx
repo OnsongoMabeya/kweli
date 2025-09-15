@@ -1,5 +1,5 @@
-import { SimpleGrid, SimpleGridProps, useBreakpointValue } from '@chakra-ui/react';
-import { ReactNode } from 'react';
+import { SimpleGrid, type SimpleGridProps, useBreakpointValue } from '@chakra-ui/react';
+import type { ReactNode } from 'react';
 
 export interface ResponsiveGridProps extends Omit<SimpleGridProps, 'columns'> {
   children: ReactNode;

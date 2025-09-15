@@ -1,5 +1,5 @@
-import { Button, ButtonProps, useBreakpointValue } from '@chakra-ui/react';
-import { ReactNode } from 'react';
+import { Button, type ButtonProps, useBreakpointValue } from '@chakra-ui/react';
+import type { ReactNode } from 'react';
 
 export interface ResponsiveButtonProps extends ButtonProps {
   children: ReactNode;

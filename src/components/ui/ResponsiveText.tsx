@@ -1,5 +1,5 @@
-import { Text, TextProps, useBreakpointValue } from '@chakra-ui/react';
-import { ReactNode } from 'react';
+import { Text, type TextProps, useBreakpointValue } from '@chakra-ui/react';
+import type { ReactNode } from 'react';
 
 export interface ResponsiveTextProps extends TextProps {
   children: ReactNode;
