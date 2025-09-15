@@ -6,8 +6,8 @@
       "use": "@vercel/static-build",
       "config": {
         "distDir": "dist",
-        "installCommand": "yarn install --ignore-engines",
-        "buildCommand": "yarn vercel-build"
+        "installCommand": "pnpm install --no-frozen-lockfile",
+        "buildCommand": "pnpm run build"
       }
     }
   ],
