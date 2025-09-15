@@ -65,7 +65,6 @@ export default defineConfig({
   },
   // Optimize deps
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom', '@chakra-ui/react', 'framer-motion'],
-  },
-}
+    include: ['react', 'react-dom', 'react-router-dom', '@chakra-ui/react', 'framer-motion']
+  }
 })
