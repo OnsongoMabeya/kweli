@@ -48,7 +48,7 @@ export const SubDepartmentStep = ({
   setFieldValue, 
   nextStep, 
   prevStep, 
-  isSubmitting
+  isSubmitting = false
 }: StepProps) => {
   const selectedDept = governmentDepartments.find(d => d.id === values.department.departmentId);
   
@@ -92,6 +92,16 @@ export const SubDepartmentStep = ({
       <HStack justify="space-between" mt={8}>
         <Button leftIcon={<FiChevronLeft />} onClick={prevStep} variant="outline">
           Back
+        </Button>
+        <Button
+          rightIcon={<FiChevronRight />}
+          onClick={nextStep}
+          colorScheme="blue"
+          isDisabled={!values.department.subDepartmentId}
+          isLoading={isSubmitting}
+          loadingText="Loading..."
+        >
+          Next
         </Button>
       </HStack>
     </VStack>
