@@ -6,9 +6,8 @@
       "use": "@vercel/static-build",
       "config": {
         "distDir": "dist",
-        "npm": {
-          "installArgs": ["--legacy-peer-deps"]
-        }
+        "installCommand": "yarn install --ignore-engines",
+        "buildCommand": "yarn vercel-build"
       }
     }
   ],
