@@ -1,8 +1,15 @@
-import { Box, Button, Container, Flex, Heading, Text, VStack, HStack, useColorModeValue, Icon, SimpleGrid, useBreakpointValue } from '@chakra-ui/react';
+import { Box, Button, Container, Flex, Heading, Text, HStack, useColorModeValue, Icon, SimpleGrid, useBreakpointValue } from '@chakra-ui/react';
 import { Link as RouterLink } from 'react-router-dom';
-import { FiArrowRight, FiCheckCircle, FiMessageSquare, FiAlertTriangle, FiTool, FiBarChart2 } from 'react-icons/fi';
+import { FiArrowRight, FiCheckCircle, FiMessageSquare, FiAlertTriangle, FiBarChart2 } from 'react-icons/fi';
 
-const FeatureCard = ({ icon, title, description, color }) => (
+interface FeatureCardProps {
+  icon: React.ElementType;
+  title: string;
+  description: string;
+  color: string;
+}
+
+const FeatureCard = ({ icon, title, description, color }: FeatureCardProps) => (
   <Box
     p={6}
     bg={useColorModeValue('white', 'gray.800')}
@@ -38,6 +45,13 @@ const FeatureCard = ({ icon, title, description, color }) => (
     </Text>
   </Box>
 );
+
+interface Testimonial {
+  name: string;
+  content: string;
+  avatar: string;
+  role: string;
+}
 
 const HomePage = () => {
   const isMobile = useBreakpointValue({ base: true, md: false });
@@ -298,21 +312,21 @@ const HomePage = () => {
             {[
               {
                 name: 'John Doe',
-                // role: 'Product Manager',
+                role: 'Product Manager',
                 content: 'Kweli has transformed how we collect and act on user feedback. The insights we\'ve gained have been invaluable for our product development.',
-                // avatar: 'https://randomuser.me/api/portraits/women/44.jpg'
+                avatar: 'https://randomuser.me/api/portraits/women/44.jpg'
               },
               {
                 name: 'Jane Doe',
-                // role: 'UX Designer',
+                role: 'UX Designer',
                 content: 'The feedback we receive through Kweli is incredibly detailed and actionable. It helps us create better user experiences every day.',
-                // avatar: 'https://randomuser.me/api/portraits/men/32.jpg'
+                avatar: 'https://randomuser.me/api/portraits/men/32.jpg'
               },
               {
                 name: 'Kasongo',
-                // role: 'Customer Success',
+                role: 'Customer Success',
                 content: 'Our response time to user issues has improved dramatically since implementing Kweli. The team loves how easy it is to track and manage feedback.',
-                // avatar: 'https://randomuser.me/api/portraits/women/68.jpg'
+                avatar: 'https://randomuser.me/api/portraits/women/68.jpg'
               }
             ].map((testimonial, index) => (
               <Box

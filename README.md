@@ -66,7 +66,7 @@ npm run preview
 
 ## Project Structure
 
-```
+```bash
 src/
 ├── assets/          # Static assets (images, fonts, etc.)
 ├── components/      # Reusable UI components
@@ -100,14 +100,16 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Built with ❤️ for communities in underserved regions
 - Special thanks to all contributors and testers
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+  // Remove tseslint.configs.recommended and replace with this
+  ...tseslint.configs.recommendedTypeChecked,
 
-      // Other configs...
+  // Alternatively, use this for stricter rules
+  ...tseslint.configs.strictTypeChecked,
+
+  // Optionally, add this for stylistic rules
+  ...tseslint.configs.stylisticTypeChecked,
+
+  // Other configs...
     ],
     languageOptions: {
       parserOptions: {

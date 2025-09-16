@@ -3,15 +3,14 @@ import {
   Box, Flex, Grid, Heading, Text, Select, HStack, VStack, Badge, 
   useColorModeValue, Tabs, TabList, TabPanels, Tab, TabPanel, 
   Table, Thead, Tbody, Tr, Th, Td, Progress, Avatar, Card, CardBody,
-  Stat, StatLabel, StatNumber, StatHelpText, StatArrow, Icon, SimpleGrid
+  Icon, SimpleGrid, IconButton, StatHelpText
 } from '@chakra-ui/react';
 import { 
   FiBarChart2, FiPieChart, FiTrendingUp, FiUsers, FiMessageSquare, 
-  FiAlertCircle, FiCheckCircle, FiClock, FiFilter, FiDownload
+  FiClock, FiFilter, FiDownload
 } from 'react-icons/fi';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { Helmet } from 'react-helmet-async';
-import { Tooltip as ChakraTooltip } from '@chakra-ui/react';
 
 // Mock data for charts
 const sentimentData = [
@@ -37,13 +36,21 @@ const timeSeriesData = [
   { name: 'Jun', value: 80 },
 ];
 
+interface StatCardProps {
+  title: string;
+  value: string | number;
+  change: number;
+  icon: React.ElementType;
+  color: string;
+}
+
 const EnhancedReportsPage = () => {
   const [timeRange, setTimeRange] = useState('week');
   const cardBg = useColorModeValue('white', 'gray.750');
   const borderColor = useColorModeValue('gray.100', 'gray.700');
   const textColor = useColorModeValue('gray.700', 'gray.200');
 
-  const StatCard = ({ title, value, change, icon, color }) => (
+  const StatCard: React.FC<StatCardProps> = ({ title, value, change, icon, color }) => (
     <Card bg={cardBg} borderRadius="xl" borderWidth="1px" borderColor={borderColor}>
       <CardBody>
         <HStack justify="space-between" mb={2}>
@@ -148,7 +155,15 @@ const EnhancedReportsPage = () => {
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                     <XAxis dataKey="name" />
                     <YAxis />
-                    <Tooltip />
+                    <RechartsTooltip 
+                      contentStyle={{
+                        backgroundColor: useColorModeValue('white', 'gray.800'),
+                        borderColor: useColorModeValue('gray.200', 'gray.700'),
+                        borderRadius: 'md',
+                        padding: '12px',
+                        boxShadow: 'lg'
+                      }}
+                    />
                     <Bar dataKey="value" fill="#9D20BD" radius={[4, 4, 0, 0]}>
                       {timeSeriesData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill="#9D20BD" />
@@ -178,7 +193,24 @@ const EnhancedReportsPage = () => {
                         outerRadius={100}
                         paddingAngle={5}
                         dataKey="value"
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        label={({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }: any) => {
+                          const RADIAN = Math.PI / 180;
+                          const radius = 25 + innerRadius + (outerRadius - innerRadius);
+                          const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                          const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+                          return (
+                            <text
+                              x={x}
+                              y={y}
+                              fill="#666"
+                              textAnchor={x > cx ? 'start' : 'end'}
+                              dominantBaseline="central"
+                            >
+                              {`${sentimentData[index].name} ${(percent * 100).toFixed(0)}%`}
+                            </text>
+                          );
+                        }}
                       >
                         {sentimentData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />

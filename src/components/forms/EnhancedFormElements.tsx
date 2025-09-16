@@ -1,9 +1,29 @@
-import { Input, Textarea, Select, FormControl, FormLabel, FormErrorMessage, Box, Text, Icon, useColorModeValue } from '@chakra-ui/react';
+import { Input, Textarea, Select, FormControl, FormLabel, FormErrorMessage, Box, Text, Icon, useColorModeValue, InputProps, TextareaProps, SelectProps } from '@chakra-ui/react';
 import { FiAlertCircle, FiCheck, FiInfo } from 'react-icons/fi';
 import { motion } from 'framer-motion';
+import { ReactNode } from 'react';
+
+interface FormFieldProps {
+  children: ReactNode;
+  label?: string;
+  error?: string;
+  helperText?: string;
+  isRequired?: boolean;
+}
+
+interface EnhancedFormFieldProps {
+  label?: string;
+  error?: string;
+  helperText?: string;
+  isRequired?: boolean;
+}
+
+type EnhancedInputProps = InputProps & EnhancedFormFieldProps;
+type EnhancedTextareaProps = TextareaProps & EnhancedFormFieldProps;
+type EnhancedSelectProps = SelectProps & EnhancedFormFieldProps;
 
 // Animated form field wrapper
-export const FormField = ({ children, label, error, helperText, isRequired = false }) => {
+export const FormField = ({ children, label, error, helperText, isRequired = false }: FormFieldProps) => {
   const labelColor = useColorModeValue('gray.700', 'gray.200');
   const helperColor = useColorModeValue('gray.500', 'gray.400');
   
@@ -58,7 +78,7 @@ export const FormField = ({ children, label, error, helperText, isRequired = fal
 };
 
 // Enhanced Input
-const EnhancedInput = (props) => {
+export const EnhancedInput = (props: EnhancedInputProps) => {
   const { label, error, helperText, isRequired, ...rest } = props;
   const inputBg = useColorModeValue('white', 'gray.700');
   const inputBorder = useColorModeValue('gray.200', 'gray.600');
@@ -88,7 +108,7 @@ const EnhancedInput = (props) => {
 };
 
 // Enhanced Textarea
-const EnhancedTextarea = (props) => {
+export const EnhancedTextarea = (props: EnhancedTextareaProps) => {
   const { label, error, helperText, isRequired, ...rest } = props;
   const inputBg = useColorModeValue('white', 'gray.700');
   const inputBorder = useColorModeValue('gray.200', 'gray.600');
@@ -120,7 +140,7 @@ const EnhancedTextarea = (props) => {
 };
 
 // Enhanced Select
-const EnhancedSelect = (props) => {
+export const EnhancedSelect = (props: EnhancedSelectProps) => {
   const { label, error, helperText, isRequired, children, ...rest } = props;
   const inputBg = useColorModeValue('white', 'gray.700');
   const inputBorder = useColorModeValue('gray.200', 'gray.600');
