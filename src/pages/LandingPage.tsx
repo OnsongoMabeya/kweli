@@ -7,13 +7,14 @@ import {
   Typography, 
   Card, 
   CardContent,
-  Paper
+  Paper,
+  CircularProgress
 } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
 import { styled } from '@mui/material/styles';
 import { fetchFeedbacks } from '../api/feedbackService';
 import type { Feedback } from '../types/feedback';
-import KenyaMap from '../components/map/KenyaMap';
+import KenyaMap from '@/components/map/SimpleKenyaMap';
 import { getFeedbackStats, aggregateFeedbackByCounty } from '../utils/feedbackAggregator';
 
 const HeroSection = styled(Box)(({ theme }: { theme: Theme }) => ({
@@ -39,6 +40,7 @@ const LandingPage: React.FC = () => {
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [selectedCounty, setSelectedCounty] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<{
     total: number;
     byCounty: Record<string, number>;
@@ -58,17 +60,29 @@ const LandingPage: React.FC = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
+        console.log('Loading feedback data...');
         const data = await fetchFeedbacks();
+        console.log('Feedback data loaded:', { count: data.length });
+        
+        const statsData = getFeedbackStats(data);
+        console.log('Feedback stats:', statsData);
+        
         setFeedbacks(data);
-        setStats(getFeedbackStats(data));
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Error loading feedback data:', error);
+        setStats(statsData);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load feedback data';
+        console.error('Error loading feedback data:', errorMessage);
+        setError(`Error: ${errorMessage}. Please try again later.`);
+      } finally {
         setIsLoading(false);
       }
     };
     
-    loadData();
+    loadData().catch(error => {
+      console.error('Unhandled error in loadData:', error);
+      setError(`Fatal error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setIsLoading(false);
+    });
   }, []);
   
   const countyData = aggregateFeedbackByCounty(feedbacks);
@@ -81,6 +95,34 @@ const LandingPage: React.FC = () => {
     navigate('/feedback');
   };
   
+  if (isLoading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box p={4} textAlign="center">
+        <Typography color="error" variant="h6" gutterBottom>
+          Error Loading Data
+        </Typography>
+        <Typography color="textSecondary" paragraph>
+          {error}
+        </Typography>
+        <Button 
+          variant="contained" 
+          color="primary" 
+          onClick={() => window.location.reload()}
+        >
+          Retry
+        </Button>
+      </Box>
+    );
+  }
+
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <HeroSection>
@@ -108,15 +150,11 @@ const LandingPage: React.FC = () => {
           <Typography variant="h4" component="h2" gutterBottom align="center">
             Feedback Overview
           </Typography>
-          {isLoading ? (
-            <Typography>Loading map data...</Typography>
-          ) : (
-            <KenyaMap 
-              data={countyData} 
-              onCountyClick={handleCountyClick}
-              selectedCounty={selectedCounty}
-            />
-          )}
+          <KenyaMap 
+            data={countyData} 
+            onCountyClick={handleCountyClick}
+            selectedCounty={selectedCounty}
+          />
         </Paper>
         
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 4, mb: 6 }}>

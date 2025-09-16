@@ -2,7 +2,7 @@
   "name": "Kweli - Citizen Feedback Platform",
   "short_name": "Kweli",
   "description": "A platform for citizens to provide feedback on public services",
-  "theme_color": "#3182ce",
+  "theme_color": "#9D20BD",
   "background_color": "#ffffff",
   "display": "standalone",
   "orientation": "portrait",

@@ -297,22 +297,22 @@ const HomePage = () => {
           <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={8}>
             {[
               {
-                name: 'Sarah Johnson',
-                role: 'Product Manager',
+                name: 'John Doe',
+                // role: 'Product Manager',
                 content: 'Kweli has transformed how we collect and act on user feedback. The insights we\'ve gained have been invaluable for our product development.',
-                avatar: 'https://randomuser.me/api/portraits/women/44.jpg'
+                // avatar: 'https://randomuser.me/api/portraits/women/44.jpg'
               },
               {
-                name: 'Michael Chen',
-                role: 'UX Designer',
+                name: 'Jane Doe',
+                // role: 'UX Designer',
                 content: 'The feedback we receive through Kweli is incredibly detailed and actionable. It helps us create better user experiences every day.',
-                avatar: 'https://randomuser.me/api/portraits/men/32.jpg'
+                // avatar: 'https://randomuser.me/api/portraits/men/32.jpg'
               },
               {
-                name: 'Amina Diallo',
-                role: 'Customer Success',
+                name: 'Kasongo',
+                // role: 'Customer Success',
                 content: 'Our response time to user issues has improved dramatically since implementing Kweli. The team loves how easy it is to track and manage feedback.',
-                avatar: 'https://randomuser.me/api/portraits/women/68.jpg'
+                // avatar: 'https://randomuser.me/api/portraits/women/68.jpg'
               }
             ].map((testimonial, index) => (
               <Box

@@ -1,15 +1,22 @@
-import React, { useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useEffect, useRef, useMemo, useCallback, useState } from 'react';
 import * as d3 from 'd3';
-import type { Feature, FeatureCollection, Point, LineString, Polygon } from 'geojson';
-import type { CountyData } from '../../types/map';
+import type { Feature, Geometry } from 'geojson';
+import { Box, CircularProgress, Typography, Button } from '@mui/material';
 
-// Define specific types for our GeoJSON features
-type PointFeature = Feature<Point>;
-type LineStringFeature = Feature<LineString>;
-type PolygonFeature = Feature<Polygon>;
-type KenyaFeature = PointFeature | LineStringFeature | PolygonFeature;
+// Define types
+interface CountyData {
+  count: number;
+  // Add other properties as needed
+}
 
-const defaultData: Record<string, CountyData> = {};
+// Define the structure of our county properties
+interface CountyProperties {
+  name: string;
+  code: number;
+  [key: string]: any; // Allow additional properties
+}
+
+type CountyFeature = Feature<Geometry, CountyProperties>;
 
 interface KenyaMapProps {
   data?: Record<string, CountyData>;
@@ -18,495 +25,578 @@ interface KenyaMapProps {
   width?: number | string;
   height?: number | string;
 }
-// Define the GeoJSON for Kenya with detailed locations
-const kenyaGeoJSON: FeatureCollection = {
-  type: "FeatureCollection",
-  features: [
-    // Major Cities
-    {
-      type: "Feature",
-      properties: { name: "Nairobi", type: "city", population: 4397000 },
-      geometry: {
-        type: "Point",
-        coordinates: [36.8219, -1.2921]
-      }
-    },
-    {
-      type: "Feature",
-      properties: { name: "Mombasa", type: "city", population: 1208000 },
-      geometry: {
-        type: "Point",
-        coordinates: [39.6682, -4.0435]
-      }
-    },
-    {
-      type: "Feature",
-      properties: { name: "Kisumu", type: "city", population: 610000 },
-      geometry: {
-        type: "Point",
-        coordinates: [34.75, -0.1022]
-      }
-    },
-    
-    // Additional Major Towns
-    {
-      type: "Feature",
-      properties: { name: "Nakuru", type: "town", population: 570674 },
-      geometry: {
-        type: "Point",
-        coordinates: [36.08, -0.3031]
-      }
-    },
-    {
-      type: "Feature",
-      properties: { name: "Eldoret", type: "town", population: 475716 },
-      geometry: {
-        type: "Point",
-        coordinates: [35.2697, 0.5143]
-      }
-    },
-    {
-      type: "Feature",
-      properties: { name: "Thika", type: "town", population: 251407 },
-      geometry: {
-        type: "Point",
-        coordinates: [37.0833, -1.05]
-      }
-    },
-    {
-      type: "Feature",
-      properties: { name: "Malindi", type: "town", population: 207253 },
-      geometry: {
-        type: "Point",
-        coordinates: [40.12, -3.22]
-      }
-    },
-    
-    // National Parks and Reserves
-    {
-      type: "Feature",
-      properties: { name: "Maasai Mara", type: "park", description: "Famous for the Great Migration" },
-      geometry: {
-        type: "Point",
-        coordinates: [35.14, -1.49]
-      }
-    },
-    {
-      type: "Feature",
-      properties: { name: "Amboseli", type: "park", description: "Iconic views of Mount Kilimanjaro" },
-      geometry: {
-        type: "Point",
-        coordinates: [37.25, -2.65]
-      }
-    },
-    
-    // Major Lakes
-    {
-      type: "Feature",
-      properties: { name: "Lake Victoria", type: "lake" },
-      geometry: {
-        type: "Point",
-        coordinates: [33.5, -0.5]
-      }
-    },
-    {
-      type: "Feature",
-      properties: { name: "Lake Nakuru", type: "lake" },
-      geometry: {
-        type: "Point",
-        coordinates: [36.08, -0.3667]
-      }
-    },
-    
-    // Mountains
-    {
-      type: "Feature",
-      properties: { name: "Mount Kenya", type: "mountain", elevation: 5199 },
-      geometry: {
-        type: "Point",
-        coordinates: [37.3089, -0.1519]
-      }
-    },
-    {
-      type: "Feature",
-      properties: { name: "Mount Elgon", type: "mountain", elevation: 4321 },
-      geometry: {
-        type: "Point",
-        coordinates: [34.55, 1.12]
-      }
-    },
-    
-    // Border Points
-    {
-      type: "Feature",
-      properties: { name: "Busia Border", type: "border" },
-      geometry: {
-        type: "Point",
-        coordinates: [34.09, 0.46]
-      }
-    },
-    {
-      type: "Feature",
-      properties: { name: "Namanga Border", type: "border" },
-      geometry: {
-        type: "Point",
-        coordinates: [36.79, -2.55]
-      }
-    },
-    
-    // Airports
-    {
-      type: "Feature",
-      properties: { name: "Jomo Kenyatta International Airport", type: "airport", code: "NBO" },
-      geometry: {
-        type: "Point",
-        coordinates: [36.93, -1.32]
-      }
-    },
-    {
-      type: "Feature",
-      properties: { name: "Moi International Airport", type: "airport", code: "MBA" },
-      geometry: {
-        type: "Point",
-        coordinates: [39.59, -4.03]
-      }
-    },
-    
-    // Major Highways
-    {
-      type: "Feature",
-      properties: { name: "Nairobi-Nakuru Highway", type: "highway" },
-      geometry: {
-        type: "LineString",
-        coordinates: [
-          [36.82, -1.29], // Nairobi
-          [36.75, -1.10],
-          [36.70, -0.90],
-          [36.65, -0.70],
-          [36.62, -0.50],
-          [36.60, -0.30],
-          [36.08, -0.30]  // Nakuru
-        ]
-      }
-    },
-    
-    // Kenya's approximate border (simplified polygon)
-    {
-      type: "Feature",
-      properties: { name: "Kenya Border", type: "border" },
-      geometry: {
-        type: "Polygon",
-        coordinates: [
-          [
-            [41.9, -4.7],  // SE corner
-            [41.9, 4.6],   // NE corner
-            [33.9, 4.6],   // NW corner
-            [33.9, -4.7],  // SW corner
-            [41.9, -4.7]   // Back to SE corner
-          ]
-        ]
-      }
-    }
-  ]
-};
-
 
 const KenyaMap: React.FC<KenyaMapProps> = ({
-  data = defaultData,
+  data = {},
   selectedCounty = null,
   onCountyClick = () => {},
   width = '100%',
   height = '500px'
 }) => {
+  // State for map data and UI
+  const [dimensions, setDimensions] = useState({ 
+    width: typeof width === 'number' ? width : 800, 
+    height: typeof height === 'number' ? height : 600 
+  });
+  const [counties, setCounties] = useState<CountyFeature[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [hoveredCounty, setHoveredCounty] = useState<string | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
+  const [transform, setTransform] = useState(d3.zoomIdentity);
+  
+  // Handle window resize
+  useEffect(() => {
+    const updateDimensions = () => {
+      if (typeof width === 'string' || typeof height === 'string') {
+        const container = svgRef.current?.parentElement;
+        if (container) {
+          setDimensions({
+            width: container.clientWidth,
+            height: container.clientHeight
+          });
+        }
+      }
+    };
 
-  // Helper function to get coordinates from a Point feature
-  const getPointCoordinates = (feature: KenyaFeature): [number, number] | null => {
-    if (feature.geometry.type === 'Point') {
-      return feature.geometry.coordinates as [number, number];
-    }
-    return null;
-  };
+    // Initial dimensions
+    updateDimensions();
+    window.addEventListener('resize', updateDimensions);
+    return () => window.removeEventListener('resize', updateDimensions);
+  }, [width, height]);
 
-  // Get max count for color scaling
-  const maxCount = useMemo(() => {
-    return Math.max(...Object.values(data).map(d => d?.count || 0), 1);
+  // Load counties data
+  useEffect(() => {
+    const loadCounties = async () => {
+      try {
+        setLoading(true);
+        console.log('Fetching GeoJSON data...');
+        const response = await fetch('/data/kenya-counties.geojson');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const geoData = await response.json() as { 
+          type: string;
+          features: Array<CountyFeature>;
+        };
+        
+        console.log('GeoJSON data loaded:', { 
+          type: geoData.type, 
+          features: geoData.features?.length || 0 
+        });
+        
+        if (!geoData?.features?.length) {
+          throw new Error('No features found in GeoJSON');
+        }
+        
+        // Ensure each feature has the required properties
+        const validFeatures = geoData.features
+          .filter(feature => feature.properties?.name && feature.properties?.code)
+          .map(feature => ({
+            ...feature,
+            properties: {
+              ...feature.properties
+            }
+          }));
+        
+        setCounties(validFeatures);
+        setError(null);
+      } catch (err) {
+        console.error('Error loading counties:', err);
+        setError(`Failed to load map data: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCounties();
+  }, []);
+
+  // Color scale for the map
+  const colorScale = useMemo(() => {
+    const counts = Object.values(data).map(d => d?.count || 0);
+    const maxCount = Math.max(1, ...counts);
+    return d3.scaleSequential(d3.interpolateYlOrRd)
+      .domain([0, maxCount]);
   }, [data]);
 
-  // Get color based on count
-  const getColorForCount = useCallback((count: number): string => {
-    if (count === 0) return '#e0e0e0';
-    const intensity = Math.min(0.9, count / maxCount);
-    const hue = 120 - (intensity * 120); // Green (120) to Red (0)
-    return `hsl(${hue}, 100%, ${90 - (intensity * 40)}%)`;
-  }, [maxCount]);
+  // Set up D3 projection
+  const projection = useMemo(() => {
+    console.log('Setting up projection with dimensions:', dimensions);
+    
+    if (!counties.length) {
+      return d3.geoMercator()
+        .center([37.9062, 0.5])
+        .scale(5000)
+        .translate([dimensions.width / 2, dimensions.height / 2]);
+    }
+    
+    // Log sample county data for debugging
+    const firstCounty = counties[0];
+    if (firstCounty) {
+      console.log('Sample county data:', {
+        name: firstCounty.properties?.name,
+        type: firstCounty.geometry.type,
+        hasCoordinates: 'coordinates' in firstCounty.geometry
+      });
+    }
 
+    // Create a simpler projection for testing
+    const proj = d3.geoMercator()
+      .center([37.9062, 0.5]) // Center on Kenya
+      .scale(5000) // Fixed scale
+      .translate([dimensions.width / 2, dimensions.height / 2]);
+    
+    // Debug: Log projection details
+    console.log('Initial projection:', {
+      center: proj.center(),
+      scale: proj.scale(),
+      translate: proj.translate()
+    });
+    
+    // Debug: Log first county's coordinates
+    if (counties.length > 0) {
+      const firstCounty = counties[0];
+      const geometry = firstCounty.geometry as any; // Type assertion for coordinates access
+      console.log('First county:', {
+        name: firstCounty.properties?.name,
+        type: firstCounty.geometry.type,
+        coordinates: geometry.coordinates
+      });
+    }
+    
+    return proj;
+  }, [counties, dimensions]);
+
+  // Set up zoom behavior
   useEffect(() => {
     if (!svgRef.current) return;
 
-    const svg = d3.select(svgRef.current);
-    svg.selectAll('*').remove();
+    const zoom = d3.zoom<SVGSVGElement, unknown>()
+      .scaleExtent([1, 8])
+      .on('zoom', (event) => {
+        setTransform(event.transform);
+      });
 
-    const containerWidth = svgRef.current.clientWidth;
-    const containerHeight = svgRef.current.clientHeight;
+    d3.select(svgRef.current).call(zoom);
+    
+    return () => {
+      if (svgRef.current) {
+        d3.select(svgRef.current).on('.zoom', null);
+      }
+    };
+  }, [dimensions]);
 
-    // Create a projection for Kenya with adjusted scale and center
-    const projection = d3.geoMercator()
-      .center([37.8, 0.2])  // Center of Kenya
-      .scale(2500)          // Adjust this value to zoom in/out
-      .translate([containerWidth / 2, containerHeight / 2]);
-
-    // Create a path generator
+  // Create path generator with the current transform applied
+  const pathGenerator = useMemo(() => {
+    if (!projection) return () => '';
+    
+    // Use the base projection for now, without transform
     const path = d3.geoPath().projection(projection);
     
-    // Add a base layer for Kenya
-    svg.append('rect')
-      .attr('width', '100%')
-      .attr('height', '100%')
-      .attr('fill', '#f0f8ff');  // Light blue background
+    // Debug: Log path for first county
+    if (counties.length > 0) {
+      const firstCounty = counties[0];
+      const pathData = path(firstCounty);
+      console.log('First county path:', pathData ? pathData.substring(0, 100) + '...' : 'No path data');
+    }
+    
+    return path;
+  }, [projection, transform, counties]);
 
-    // Process features by type with proper type guards
-    const featuresByType = {
-      border: kenyaGeoJSON.features.filter((f): f is Feature<Polygon> => 
-        f.properties?.type === 'border' && f.geometry.type === 'Polygon'
-      ),
-      city: kenyaGeoJSON.features.filter((f): f is Feature<Point> => 
-        f.properties?.type === 'city' && f.geometry.type === 'Point'
-      ),
-      town: kenyaGeoJSON.features.filter((f): f is Feature<Point> => 
-        f.properties?.type === 'town' && f.geometry.type === 'Point'
-      ),
-      park: kenyaGeoJSON.features.filter((f): f is Feature<Point> => 
-        f.properties?.type === 'park' && f.geometry.type === 'Point'
-      ),
-      lake: kenyaGeoJSON.features.filter((f): f is Feature<Point> => 
-        f.properties?.type === 'lake' && f.geometry.type === 'Point'
-      ),
-      mountain: kenyaGeoJSON.features.filter((f): f is Feature<Point> => 
-        f.properties?.type === 'mountain' && f.geometry.type === 'Point'
-      ),
-      airport: kenyaGeoJSON.features.filter((f): f is Feature<Point> => 
-        f.properties?.type === 'airport' && f.geometry.type === 'Point'
-      ),
-      highway: kenyaGeoJSON.features.filter((f): f is Feature<LineString, any> => 
-        f.properties?.type === 'highway' && f.geometry.type === 'LineString'
-      )
-    };
+  // Handle county interactions
+  const handleCountyClick = useCallback((countyName: string) => {
+    onCountyClick(countyName);
+  }, [onCountyClick]);
 
-    // Draw Kenya border
-    svg.selectAll('.kenya-border')
-      .data(featuresByType.border.filter(f => f.geometry.type === 'Polygon'))
-      .enter()
-      .append('path')
-      .attr('class', 'kenya-border')
-      .attr('d', path)
-      .attr('fill', '#e0f7fa')
-      .attr('stroke', '#0288d1')
-      .attr('stroke-width', 1);
+  // Handle mouse enter/leave directly in the path element to avoid extra callbacks
 
-    // Draw highways
-    svg.selectAll('.highway')
-      .data(featuresByType.highway)
-      .enter()
-      .append('path')
-      .attr('class', 'highway')
-      .attr('d', path)
-      .attr('stroke', '#ff9800')
-      .attr('stroke-width', 2)
-      .attr('stroke-dasharray', '5,5')
-      .attr('fill', 'none');
+  // Handle mouse move for tooltip positioning
+  const handleMouseMove = useCallback((event: React.MouseEvent) => {
+    if (!tooltipRef.current) return;
+    
+    const tooltip = tooltipRef.current;
+    const x = event.clientX;
+    const y = event.clientY;
+    
+    tooltip.style.left = `${x + 10}px`;
+    tooltip.style.top = `${y + 10}px`;
+  }, []);
 
-    // Draw lakes
-    featuresByType.lake.forEach(lake => {
-      const coords = getPointCoordinates(lake);
-      if (!coords) return;
-      
-      const [x, y] = projection(coords) || [0, 0];
-      svg.append('circle')
-        .attr('class', 'lake')
-        .attr('cx', x)
-        .attr('cy', y)
-        .attr('r', 8)
-        .attr('fill', '#2196f3')
-        .attr('opacity', 0.6);
-    });
+  // Zoom handlers
+  const zoomIn = useCallback(() => {
+    if (!svgRef.current) return;
+    d3.select(svgRef.current)
+      .transition()
+      .call(d3.zoom<SVGSVGElement, unknown>().scaleBy, 1.5);
+  }, []);
 
-    // Draw mountains
-    featuresByType.mountain.forEach(mountain => {
-      const coords = getPointCoordinates(mountain);
-      if (!coords) return;
-      
-      const [x, y] = projection(coords) || [0, 0];
-      svg.append('path')
-        .attr('class', 'mountain')
-        .attr('d', `M${x - 5},${y + 5} L${x},${y - 5} L${x + 5},${y + 5} Z`)
-        .attr('fill', '#795548')
-        .attr('stroke', '#5d4037')
-        .attr('stroke-width', 0.5);
-    });
+  const zoomOut = useCallback(() => {
+    if (!svgRef.current) return;
+    d3.select(svgRef.current)
+      .transition()
+      .call(d3.zoom<SVGSVGElement, unknown>().scaleBy, 0.75);
+  }, []);
 
-    // Draw national parks
-    featuresByType.park.forEach(park => {
-      const coords = getPointCoordinates(park);
-      if (!coords) return;
-      
-      const [x, y] = projection(coords) || [0, 0];
-      svg.append('circle')
-        .attr('class', 'park')
-        .attr('cx', x)
-        .attr('cy', y)
-        .attr('r', 6)
-        .attr('fill', '#4caf50')
-        .attr('opacity', 0.7);
-    });
+  const resetZoom = useCallback(() => {
+    if (!svgRef.current) return;
+    d3.select(svgRef.current)
+      .transition()
+      .call(d3.zoom<SVGSVGElement, unknown>().transform, d3.zoomIdentity);
+  }, []);
 
-    // Draw towns
-    featuresByType.town.forEach(town => {
-      const coords = getPointCoordinates(town);
-      if (!coords) return;
-      
-      const [x, y] = projection(coords) || [0, 0];
-      svg.append('circle')
-        .attr('class', 'town')
-        .attr('cx', x)
-        .attr('cy', y)
-        .attr('r', 4)
-        .attr('fill', '#ff9800');
-    });
+  // Render error state
+  if (error) {
+    return (
+      <Box 
+        display="flex" 
+        justifyContent="center" 
+        alignItems="center" 
+        height="100%"
+        bgcolor="error.light"
+        color="error.contrastText"
+        p={2}
+        borderRadius={1}
+      >
+        <Typography variant="body1" align="center">
+          {error}
+        </Typography>
+      </Box>
+    );
+  }
 
-    // Draw cities (larger points)
-    featuresByType.city.forEach(city => {
-      const coords = getPointCoordinates(city);
-      if (!coords) return;
-      
-      const [x, y] = projection(coords) || [0, 0];
-      svg.append('circle')
-        .attr('class', 'city')
-        .attr('cx', x)
-        .attr('cy', y)
-        .attr('r', 6)
-        .attr('fill', '#f44336');
-    });
+  // Render loading state
+  if (loading) {
+    return (
+      <Box 
+        display="flex" 
+        justifyContent="center" 
+        alignItems="center" 
+        height="100%"
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
 
-    // Draw airports
-    featuresByType.airport.forEach(airport => {
-      const coords = getPointCoordinates(airport);
-      if (!coords) return;
-      
-      const [x, y] = projection(coords) || [0, 0];
-      svg.append('path')
-        .attr('class', 'airport')
-        .attr('d', `M${x - 4},${y} L${x + 4},${y} M${x},${y - 4} L${x},${y + 4}`)
-        .attr('stroke', '#9c27b0')
-        .attr('stroke-width', 2)
-        .attr('fill', 'none');
-    });
+  // Debug rectangle to show the SVG viewport
+  const debugViewport = (
+    <rect
+      x="0"
+      y="0"
+      width={dimensions.width}
+      height={dimensions.height}
+      fill="none"
+      stroke="red"
+      strokeWidth="2"
+      strokeDasharray="5,5"
+    />
+  );
 
-    // Add labels for major locations
-    const addLabel = (feature: PointFeature, className: string, dy = -10) => {
-      const coords = getPointCoordinates(feature);
-      const name = feature.properties?.name;
-      if (!coords || !name) return;
-      
-      const [x, y] = projection(coords) || [0, 0];
-      svg.append('text')
-        .attr('x', x)
-        .attr('y', y + dy)
-        .text(name)
-        .attr('class', `map-label ${className}`)
-        .attr('text-anchor', 'middle')
-        .attr('font-size', '10px')
-        .attr('fill', '#333')
-        .attr('font-weight', 'bold')
-        .attr('paint-order', 'stroke')
-        .attr('stroke', 'white')
-        .attr('stroke-width', '3px')
-        .attr('stroke-linecap', 'butt')
-        .attr('stroke-linejoin', 'miter');
-    };
-
-    // Add labels for cities and major towns
-    featuresByType.city.forEach(feature => addLabel(feature, 'city-label', -10));
-    featuresByType.town.forEach(feature => addLabel(feature, 'town-label', -10));
-    featuresByType.park.forEach(feature => addLabel(feature, 'park-label', 15));
-    featuresByType.airport.forEach(feature => addLabel(feature, 'airport-label', 15));
-
-    // Add interactive elements
-    const interactiveFeatures = [
-      ...featuresByType.city,
-      ...featuresByType.town,
-      ...featuresByType.park,
-      ...featuresByType.airport,
-      ...featuresByType.mountain
-    ];
-
-    interactiveFeatures.forEach(feature => {
-      const coords = getPointCoordinates(feature);
-      if (!coords) return;
-      
-      const [x, y] = projection(coords) || [0, 0];
-      const props = feature.properties || {};
-      
-      svg.append('circle')
-        .attr('cx', x)
-        .attr('cy', y)
-        .attr('r', 8)  // Invisible hit area
-        .attr('opacity', 0)
-        .style('cursor', 'pointer')
-        .on('mouseover', function() {
-          if (!tooltipRef.current) return;
-          
-          let tooltipText = `<strong>${props.name || 'Unknown'}</strong>`;
-          if (props.type) tooltipText += `<br>Type: ${props.type}`;
-          if (props.population) tooltipText += `<br>Population: ${props.population.toLocaleString()}`;
-          if (props.elevation) tooltipText += `<br>Elevation: ${props.elevation}m`;
-          if (props.description) tooltipText += `<br>${props.description}`;
-          if (props.code) tooltipText += `<br>Code: ${props.code}`;
-          
-          tooltipRef.current.style.display = 'block';
-          tooltipRef.current.innerHTML = tooltipText;
-          d3.select(this).attr('opacity', 0.2);
-        })
-        .on('mousemove', (event: MouseEvent) => {
-          if (tooltipRef.current) {
-            tooltipRef.current.style.left = `${event.pageX + 10}px`;
-            tooltipRef.current.style.top = `${event.pageY + 10}px`;
-          }
-        })
-        .on('mouseout', function() {
-          if (tooltipRef.current) {
-            tooltipRef.current.style.display = 'none';
-          }
-          d3.select(this).attr('opacity', 0);
-        });
-    });
-
-  }, [data, selectedCounty, onCountyClick, maxCount, getColorForCount]);
+  // Render the map
+  console.log('Rendering map with', counties.length, 'counties');
+  console.log('Map dimensions:', dimensions);
 
   return (
-    <div style={{ position: 'relative', width, height }}>
+    <Box 
+      width="100%" 
+      height="100%" 
+      border="1px solid #ddd"
+      overflow="hidden"
+      position="relative"
+      bgcolor="#f5f5f5"
+    >
       <svg
         ref={svgRef}
         width="100%"
         height="100%"
-        style={{ backgroundColor: '#f5f5f5' }}
-      />
-      <div
-        ref={tooltipRef}
-        style={{
+        viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
+        style={{ 
+          display: 'block',
           position: 'absolute',
-          backgroundColor: 'white',
-          padding: '8px',
-          border: '1px solid #ddd',
-          borderRadius: '4px',
-          pointerEvents: 'none',
-          display: 'none',
-          zIndex: 10,
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          top: 0,
+          left: 0,
+          cursor: 'move'
         }}
-      />
-    </div>
+        preserveAspectRatio="xMidYMid meet"
+      >
+        <g>
+          {/* Background */}
+          <rect 
+            x="0" 
+            y="0" 
+            width={dimensions.width} 
+            height={dimensions.height} 
+            fill="#f0f8ff"
+          />
+          
+          {/* Debug: Center point */}
+          <circle 
+            cx={dimensions.width / 2} 
+            cy={dimensions.height / 2} 
+            r="5" 
+            fill="red" 
+            fillOpacity="0.5"
+          />
+          
+          {/* Debug: Viewport outline */}
+          {debugViewport}
+          
+          {/* Render counties */}
+          {counties.map((county, index) => {
+            const countyName = county.properties?.name;
+            if (!countyName) {
+              console.warn('County feature missing name property:', county);
+              return null;
+            }
+            
+            const countyData = data[countyName];
+            const isSelected = countyName === selectedCounty;
+            const isHovered = countyName === hoveredCounty;
+            
+            try {
+              const pathData = pathGenerator(county);
+              if (!pathData) {
+                console.warn(`No path data for county: ${countyName}`, county);
+                return null;
+              }
+              
+              console.log(`Rendering county ${countyName} with path:`, pathData.substring(0, 50) + '...');
+              
+              return (
+                <path
+                  key={`${countyName}-${index}`}
+                  d={pathData}
+                  fill={countyData ? colorScale(countyData.count) : '#e0e0e0'}
+                  stroke="#333"
+                  strokeWidth={isSelected || isHovered ? 2 : 0.5}
+                  opacity={isHovered ? 0.8 : 1}
+                  onClick={() => handleCountyClick(countyName)}
+                  onMouseEnter={() => setHoveredCounty(countyName)}
+                  onMouseLeave={() => setHoveredCounty(null)}
+                  onMouseMove={handleMouseMove}
+                  style={{ 
+                    cursor: 'pointer',
+                    vectorEffect: 'non-scaling-stroke',
+                    transition: 'opacity 0.2s, stroke-width 0.2s'
+                  }}
+                />
+              );
+            } catch (err) {
+              console.error(`Error rendering county ${countyName}:`, err, county);
+              return null;
+            }
+          })}
+        </g>
+        
+        {/* No data message */}
+        {counties.length === 0 && (
+          <text 
+            x="50%" 
+            y="50%" 
+            textAnchor="middle" 
+            fill="#666"
+            style={{
+              fontSize: '16px',
+              fontWeight: 'bold'
+            }}
+          >
+            No map data available
+          </text>
+        )}
+      </svg>
+      
+      {/* Zoom controls */}
+      <Box
+        position="absolute"
+        top={16}
+        right={16}
+        zIndex={1}
+        display="flex"
+        flexDirection="column"
+        gap={1}
+        bgcolor="background.paper"
+        p={1}
+        borderRadius={1}
+        boxShadow={2}
+      >
+        <Button 
+          variant="contained" 
+          size="small" 
+          onClick={zoomIn}
+          sx={{ minWidth: 'auto', padding: '4px 8px' }}
+        >
+          +
+        </Button>
+        <Button 
+          variant="contained" 
+          size="small" 
+          onClick={zoomOut}
+          sx={{ minWidth: 'auto', padding: '4px 8px' }}
+        >
+          -
+        </Button>
+        <Button 
+          variant="contained" 
+          size="small" 
+          onClick={resetZoom}
+          sx={{ minWidth: 'auto', padding: '4px 8px' }}
+        >
+          Reset
+        </Button>
+      </Box>
+      
+      <Box 
+        width="100%" 
+        height="100%" 
+        border="1px solid #ddd"
+        overflow="hidden"
+        position="relative"
+        bgcolor="#f5f5f5"
+      >
+        <svg
+          ref={svgRef}
+          width="100%"
+          height="100%"
+          viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
+          style={{ 
+            display: 'block',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            cursor: 'move'
+          }}
+          preserveAspectRatio="xMidYMid meet"
+        >
+          <g>
+            {/* Background */}
+            <rect 
+              x="0" 
+              y="0" 
+              width={dimensions.width} 
+              height={dimensions.height} 
+              fill="#f0f8ff"
+            />
+            
+            {/* Debug: Center point */}
+            <circle 
+              cx={dimensions.width / 2} 
+              cy={dimensions.height / 2} 
+              r="5" 
+              fill="red" 
+              fillOpacity="0.5"
+            />
+            
+            {/* Debug: Viewport outline */}
+            <rect
+              x="0"
+              y="0"
+              width={dimensions.width}
+              height={dimensions.height}
+              fill="none"
+              stroke="red"
+              strokeWidth="2"
+              strokeDasharray="5,5"
+            />
+            
+            {/* Debug: Center point */}
+            <circle 
+              cx={dimensions.width / 2} 
+              cy={dimensions.height / 2} 
+              r="5" 
+              fill="red" 
+              fillOpacity="0.5"
+            />
+            
+            {/* Debug: Viewport outline */}
+            {debugViewport}
+            
+            {/* Render counties */}
+            {counties.map((county, index) => {
+              const countyName = county.properties?.name;
+              if (!countyName) {
+                console.warn('County feature missing name property:', county);
+                return null;
+              }
+              
+              const countyData = data[countyName];
+              const isSelected = countyName === selectedCounty;
+              const isHovered = countyName === hoveredCounty;
+              
+              try {
+                const pathData = pathGenerator(county);
+                if (!pathData) {
+                  console.warn(`No path data for county: ${countyName}`, county);
+                  return null;
+                }
+                
+                console.log(`Rendering county ${countyName} with path:`, pathData.substring(0, 50) + '...');
+                
+                return (
+                  <path
+                    key={`${countyName}-${index}`}
+                    d={pathData}
+                    fill={countyData ? colorScale(countyData.count) : '#e0e0e0'}
+                    stroke="#333"
+                    strokeWidth={isSelected || isHovered ? 2 : 0.5}
+                    opacity={isHovered ? 0.8 : 1}
+                    onClick={() => handleCountyClick(countyName)}
+                    onMouseEnter={() => setHoveredCounty(countyName)}
+                    onMouseLeave={() => setHoveredCounty(null)}
+                    onMouseMove={handleMouseMove}
+                    style={{ 
+                      cursor: 'pointer',
+                      vectorEffect: 'non-scaling-stroke',
+                      transition: 'opacity 0.2s, stroke-width 0.2s'
+                    }}
+                  />
+                );
+              } catch (err) {
+                console.error(`Error rendering county ${countyName}:`, err, county);
+                return null;
+              }
+            })}
+          </g>
+          
+          {/* No data message */}
+          {counties.length === 0 && (
+            <text 
+              x="50%" 
+              y="50%" 
+              textAnchor="middle" 
+              fill="#666"
+              style={{
+                fontSize: '16px',
+                fontWeight: 'bold'
+              }}
+            >
+              No map data available
+            </text>
+          )}
+        </svg>
+        
+        {/* Tooltip */}
+        {hoveredCounty && data[hoveredCounty] && (
+          <Box
+            ref={tooltipRef}
+            position="absolute"
+            top={0}
+            left={0}
+            bgcolor="background.paper"
+            p={1}
+            borderRadius={1}
+            boxShadow={1}
+            zIndex={1}
+          >
+            <Typography variant="subtitle2">{hoveredCounty}</Typography>
+            <Typography variant="body2">
+              Reports: {data[hoveredCounty]?.count || 0}
+            </Typography>
+          </Box>
+        )}
+      </Box>
+    </Box>
   );
 };
 
