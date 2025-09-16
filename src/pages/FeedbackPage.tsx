@@ -1,12 +1,10 @@
-import { Box, Container, Heading, VStack, HStack, Text, useColorModeValue, Icon, Flex, useBreakpointValue } from '@chakra-ui/react';
+import { Box, Container, Heading, VStack, HStack, Text, useColorModeValue, Flex, Icon } from '@chakra-ui/react';
 import { Helmet } from 'react-helmet-async';
 import { FiMessageSquare, FiAlertTriangle, FiTool, FiChevronRight } from 'react-icons/fi';
 import FeedbackForm from '../components/forms/FeedbackForm';
 
 const FeedbackPage = () => {
-  const bg = useColorModeValue('white', 'gray.800');
   const cardBg = useColorModeValue('white', 'gray.750');
-  const isMobile = useBreakpointValue({ base: true, md: false });
   const heroBg = useColorModeValue(
     'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)',
     'linear-gradient(135deg, #3730A3 0%, #5B21B6 100%)'

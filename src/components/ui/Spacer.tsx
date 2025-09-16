@@ -1,5 +1,5 @@
-import { Box, BoxProps } from '@chakra-ui/react';
-import { useResponsive } from '../../hooks/useResponsive';
+import { Box } from '@chakra-ui/react';
+import type { BoxProps } from '@chakra-ui/react';
 
 export interface SpacerProps extends BoxProps {
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | number;
@@ -11,8 +11,6 @@ const Spacer = ({
   horizontal = false, 
   ...props 
 }: SpacerProps) => {
-  const { spacing } = useResponsive();
-  
   const sizeMap = {
     xs: 1,      // 4px
     sm: 2,       // 8px

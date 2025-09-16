@@ -1,13 +1,16 @@
-import { Button, type ButtonProps, useBreakpointValue } from '@chakra-ui/react';
+import { Button, useBreakpointValue } from '@chakra-ui/react';
+import type { ButtonProps } from '@chakra-ui/react';
 import type { ReactNode } from 'react';
 
-export interface ResponsiveButtonProps extends ButtonProps {
+type ResponsiveValue<T> = T | { [key: string]: T };
+
+export interface ResponsiveButtonProps extends Omit<ButtonProps, 'size' | 'variant' | 'leftIcon' | 'rightIcon' | 'isFullWidth'> {
   children: ReactNode;
-  size?: 'xs' | 'sm' | 'md' | 'lg' | Record<string, string>;
-  variant?: 'solid' | 'outline' | 'ghost' | 'link' | Record<string, string>;
-  leftIcon?: ReactNode | Record<string, ReactNode>;
-  rightIcon?: ReactNode | Record<string, ReactNode>;
-  fullWidth?: boolean | Record<string, boolean>;
+  size?: ResponsiveValue<ButtonProps['size']>;
+  variant?: ResponsiveValue<ButtonProps['variant']>;
+  leftIcon?: ReactNode;
+  rightIcon?: ReactNode;
+  fullWidth?: ResponsiveValue<boolean>;
   loadingText?: string;
   isLoading?: boolean;
   isDisabled?: boolean;
@@ -29,51 +32,33 @@ const ResponsiveButton = ({
   onClick,
   ...props
 }: ResponsiveButtonProps) => {
-  // Handle responsive size
+  // Get responsive values
   const responsiveSize = useBreakpointValue(
-    typeof size === 'string' ? { base: size } : size,
+    typeof size === 'object' ? size : { base: size },
     { fallback: 'md' }
-  );
+  ) as ButtonProps['size'];
 
-  // Handle responsive variant
   const responsiveVariant = useBreakpointValue(
-    typeof variant === 'string' ? { base: variant } : variant,
+    typeof variant === 'object' ? variant : { base: variant },
     { fallback: 'solid' }
-  );
+  ) as ButtonProps['variant'];
 
-  // Handle responsive left icon
-  const responsiveLeftIcon = useBreakpointValue(
-    leftIcon && typeof leftIcon === 'object' && !('type' in leftIcon)
-      ? leftIcon
-      : { base: leftIcon },
-    { fallback: undefined }
-  );
-
-  // Handle responsive right icon
-  const responsiveRightIcon = useBreakpointValue(
-    rightIcon && typeof rightIcon === 'object' && !('type' in rightIcon)
-      ? rightIcon
-      : { base: rightIcon },
-    { fallback: undefined }
-  );
-
-  // Handle responsive full width
   const responsiveFullWidth = useBreakpointValue(
-    typeof fullWidth === 'boolean' 
-      ? { base: fullWidth } 
-      : fullWidth,
-    { fallback: false }
-  );
+    typeof fullWidth === 'object' 
+      ? fullWidth 
+      : { base: fullWidth },
+    { fallback: undefined }
+  ) as boolean | undefined;
 
   return (
     <Button
       size={responsiveSize}
       variant={responsiveVariant}
-      leftIcon={responsiveLeftIcon as any}
-      rightIcon={responsiveRightIcon as any}
-      width={responsiveFullWidth ? '100%' : 'auto'}
-      loadingText={loadingText}
+      leftIcon={leftIcon as any}
+      rightIcon={rightIcon as any}
+      isFullWidth={responsiveFullWidth}
       isLoading={isLoading}
+      loadingText={loadingText}
       isDisabled={isDisabled}
       type={type}
       onClick={onClick}

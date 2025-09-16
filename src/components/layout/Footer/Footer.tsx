@@ -1,31 +1,54 @@
-import { Box, Text, Link, Flex, useColorModeValue } from '@chakra-ui/react';
+import { Box, Typography, Container, useTheme, useMediaQuery } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
+import { styled } from '@mui/material/styles';
+
+const FooterContainer = styled(Box)(({ theme }) => ({
+  backgroundColor: theme.palette.background.paper,
+  color: theme.palette.text.secondary,
+  padding: theme.spacing(3, 0),
+  marginTop: theme.spacing(4),
+  borderTop: `1px solid ${theme.palette.divider}`,
+}));
+
+const StyledLink = styled(RouterLink)(({ theme }) => ({
+  color: theme.palette.primary.main,
+  textDecoration: 'none',
+  '&:hover': {
+    textDecoration: 'underline',
+  },
+  margin: theme.spacing(0, 2),
+}));
 
 const Footer = () => {
-  const bg = useColorModeValue('gray.50', 'gray.900');
-  const color = useColorModeValue('gray.700', 'gray.200');
+  const isMobile = useMediaQuery(useTheme().breakpoints.down('md'));
 
   return (
-    <Box as="footer" bg={bg} color={color} py={6} mt={8}>
-      <Box maxW="container.xl" mx="auto" px={4}>
-        <Flex direction={{ base: 'column', md: 'row' }} justify="space-between" align="center">
-          <Text mb={{ base: 4, md: 0 }}>
+    <FooterContainer>
+      <Container maxWidth="lg">
+        <Box
+          display="flex"
+          flexDirection={isMobile ? 'column' : 'row'}
+          justifyContent="space-between"
+          alignItems="center"
+          textAlign={isMobile ? 'center' : 'left'}
+        >
+          <Typography variant="body2" mb={isMobile ? 2 : 0}>
             © {new Date().getFullYear()} Kweli. All rights reserved.
-          </Text>
-          <Flex gap={6}>
-            <Link as={RouterLink} to="/privacy" color="brand.500">
+          </Typography>
+          <Box>
+            <StyledLink to="/privacy">
               Privacy Policy
-            </Link>
-            <Link as={RouterLink} to="/terms" color="brand.500">
+            </StyledLink>
+            <StyledLink to="/terms">
               Terms of Service
-            </Link>
-            <Link as={RouterLink} to="/contact" color="brand.500">
+            </StyledLink>
+            <StyledLink to="/contact">
               Contact
-            </Link>
-          </Flex>
-        </Flex>
-      </Box>
-    </Box>
+            </StyledLink>
+          </Box>
+        </Box>
+      </Container>
+    </FooterContainer>
   );
 };
 

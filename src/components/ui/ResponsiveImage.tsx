@@ -1,7 +1,8 @@
-import { Image, ImageProps, useBreakpointValue } from '@chakra-ui/react';
+import { Image, useBreakpointValue } from '@chakra-ui/react';
+import type { ImageProps } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 
-interface ResponsiveImageProps extends ImageProps {
+interface ResponsiveImageProps extends Omit<ImageProps, 'srcSet'> {
   src: string;
   srcSet?: {
     sm?: string;

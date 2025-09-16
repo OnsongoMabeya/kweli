@@ -11,14 +11,28 @@ export interface DepartmentSelection {
   customIssue?: string;
 }
 
+export interface GeoLocation {
+  latitude: number;
+  longitude: number;
+  accuracy?: number;
+  region?: string;
+  county?: string;
+  timestamp?: string;
+}
+
+export type FeedbackType = 'feedback' | 'complaint' | 'suggestion' | 'bug' | 'feature';
+
 export interface FeedbackFormValues {
   phoneNumber: string;
   email?: string;
   department: DepartmentSelection;
   description: string;
+  message?: string;
+  type: FeedbackType;
   attachments?: File[];
   priority: 'low' | 'medium' | 'high';
   currentStep: number;
+  location?: GeoLocation;
 }
 
 export interface Feedback extends Omit<FeedbackFormValues, 'attachments' | 'currentStep'> {

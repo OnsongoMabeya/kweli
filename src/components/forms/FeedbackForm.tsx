@@ -1,26 +1,8 @@
 import { Formik, Form } from 'formik';
 import type { FormikHelpers } from 'formik';
 import * as Yup from 'yup';
-import { useState, useMemo } from 'react';
-import { useSubmitFeedback } from '../../hooks/useFeedback';
-import { 
-  Box, 
-  useToast, 
-  useSteps,
-  Step,
-  StepIndicator,
-  StepNumber,
-  StepTitle,
-  StepDescription,
-  Stepper,
-  StepSeparator,
-  useColorModeValue,
-  Container,
-  HStack,
-  Button,
-  useMediaQuery,
-  type StackDirection,
-} from '@chakra-ui/react';
+import { useMemo, useState } from 'react';
+import { useSteps, useColorModeValue, Box, Container, HStack, Button } from '@chakra-ui/react';
 import { FiChevronLeft, FiChevronRight, FiSend } from 'react-icons/fi';
 import type { FeedbackFormValues } from '../../types/feedback';
 import { 
@@ -105,7 +87,8 @@ const initialValues: FeedbackFormValues = {
   phoneNumber: '',
   email: '',
   description: '',
-  currentStep: 0,
+  currentStep: 1,
+  type: 'feedback',
   department: {
     departmentId: '',
     departmentName: '',
@@ -114,20 +97,17 @@ const initialValues: FeedbackFormValues = {
     serviceId: '',
     serviceName: '',
     selectedIssue: '',
-    customIssue: '',
+    customIssue: ''
   },
   priority: 'medium',
   attachments: [],
 };
 
 const FeedbackForm = () => {
-  const toast = useToast();
-  const { mutate: submitFeedback } = useSubmitFeedback();
-  const [activeStep, setActiveStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isMobile] = useMediaQuery('(max-width: 768px)');
   
-  const { setActiveStep: setStep } = useSteps({
+  // Set up form steps
+  const { activeStep, setActiveStep } = useSteps({
     index: 0,
     count: steps.length,
   });
@@ -135,57 +115,29 @@ const FeedbackForm = () => {
   // Memoize the validation schema to prevent recreation on each render
   const validationSchema = useMemo(() => createValidationSchema(), []);
 
-  const handleNext = () => {
-    const nextStep = Math.min(activeStep + 1, steps.length - 1);
-    setActiveStep(nextStep);
-    setStep(nextStep);
-  };
-
-  const handlePrev = () => {
-    const prevStep = Math.max(activeStep - 1, 0);
-    setActiveStep(prevStep);
-    setStep(prevStep);
-  };
-
-  const handleStepChange = (step: number) => {
-    setActiveStep(step);
-    setStep(step);
-  };
-
+  // Handle form submission
   const handleFormSubmit = async (
     values: FeedbackFormValues,
     { resetForm }: FormikHelpers<FeedbackFormValues>
   ) => {
     setIsSubmitting(true);
     try {
-      await submitFeedback(values);
-      
-      // Show success message
-      toast({
-        title: 'Feedback submitted',
-        description: 'Thank you for your feedback!',
-        status: 'success',
-        duration: 5000,
-        isClosable: true,
-        position: 'top',
-      });
-      
-      // Reset form and go to first step
+      console.log('Form submitted:', values);
+      // TODO: Add actual form submission logic here
       resetForm();
-      setActiveStep(0);
-    } catch (error) {
-      console.error('Error submitting feedback:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to submit feedback. Please try again.',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-        position: 'top',
-      });
     } finally {
       setIsSubmitting(false);
     }
+  };
+  
+  const handleNext = () => {
+    const nextStep = Math.min(activeStep + 1, steps.length - 1);
+    setActiveStep(nextStep);
+  };
+  
+  const handlePrev = () => {
+    const prevStep = Math.max(activeStep - 1, 0);
+    setActiveStep(prevStep);
   };
 
   const CurrentStepComponent = StepComponents[activeStep];

@@ -1,19 +1,20 @@
-import { Box, BoxProps, useBreakpointValue } from '@chakra-ui/react';
-import { ReactNode } from 'react';
+import { Box, useBreakpointValue } from '@chakra-ui/react';
+import type { BoxProps } from '@chakra-ui/react';
+import type { ReactNode } from 'react';
 
-export interface PageContainerProps extends BoxProps {
+export interface PageContainerProps extends Omit<BoxProps, 'maxW' | 'px' | 'py'> {
   children: ReactNode;
   maxW?: string | Record<string, string>;
-  paddingX?: string | number | Record<string, string | number>;
-  paddingY?: string | number | Record<string, string | number>;
+  paddingX?: string | Record<string, string>;
+  paddingY?: string | Record<string, string>;
   isFullWidth?: boolean;
 }
 
 const PageContainer = ({
   children,
   maxW = 'container.xl',
-  paddingX = { base: 4, sm: 6, md: 8, lg: 10 },
-  paddingY = { base: 4, md: 6, lg: 8 },
+  paddingX = { base: '4', sm: '6', md: '8', lg: '10' },
+  paddingY = { base: '4', md: '6', lg: '8' },
   isFullWidth = false,
   ...props
 }: PageContainerProps) => {
@@ -26,16 +27,16 @@ const PageContainer = ({
   // Handle responsive padding
   const responsivePaddingX = useBreakpointValue(
     typeof paddingX === 'string' || typeof paddingX === 'number'
-      ? { base: paddingX }
+      ? { base: String(paddingX) }
       : paddingX,
-    { fallback: 4 }
+    { fallback: '4' }
   );
 
   const responsivePaddingY = useBreakpointValue(
     typeof paddingY === 'string' || typeof paddingY === 'number'
-      ? { base: paddingY }
+      ? { base: String(paddingY) }
       : paddingY,
-    { fallback: 4 }
+    { fallback: '4' }
   );
 
   return (

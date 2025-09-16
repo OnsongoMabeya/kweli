@@ -79,7 +79,7 @@ export const useResponsive = () => {
     containerWidths,
     
     // Helper functions
-    responsive: (values: any, prop?: string) => {
+    responsive: (values: any) => {
       if (!values) return undefined;
       if (typeof values === 'object' && !Array.isArray(values)) {
         return useBreakpointValue(values);

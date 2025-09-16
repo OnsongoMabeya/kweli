@@ -1,15 +1,29 @@
 import { Text, type TextProps, useBreakpointValue } from '@chakra-ui/react';
 import type { ReactNode } from 'react';
 
-export interface ResponsiveTextProps extends TextProps {
+type ResponsiveTextProps = Omit<TextProps, 'fontSize' | 'fontWeight' | 'lineHeight' | 'letterSpacing' | 'textAlign' | 'maxW'> & {
   children: ReactNode;
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl' | Record<string, string>;
-  weight?: 'normal' | 'medium' | 'semibold' | 'bold' | Record<string, string>;
-  lineHeight?: string | number | Record<string, string | number>;
-  letterSpacing?: string | Record<string, string>;
-  maxW?: string | Record<string, string>;
-  textAlign?: 'left' | 'center' | 'right' | 'justify' | Record<string, string>;
-}
+  size?: string | number | (string | number)[] | { [key: string]: string | number };
+  weight?: string | number | (string | number)[] | { [key: string]: string | number };
+  lineHeight?: string | number | (string | number)[] | { [key: string]: string | number };
+  letterSpacing?: string | number | (string | number)[] | { [key: string]: string | number };
+  textAlign?: 'left' | 'center' | 'right' | 'justify' | (string & {}) | (string | null | (string | null)[])[] | { [key: string]: string | number };
+  maxW?: string | number | (string | number)[] | { [key: string]: string | number };
+};
+
+const useResponsiveProp = <T extends string | number | undefined>(
+  value: T | T[] | { [key: string]: T } | undefined,
+  defaultValue: T
+): T => {
+  const responsiveValue = useBreakpointValue(
+    value && typeof value === 'object' && !Array.isArray(value)
+      ? value as Record<string, T>
+      : { base: value as T },
+    { fallback: 'base' }
+  );
+
+  return responsiveValue ?? defaultValue;
+};
 
 const ResponsiveText = ({
   children,
@@ -18,47 +32,15 @@ const ResponsiveText = ({
   lineHeight = 'normal',
   letterSpacing = 'normal',
   textAlign = 'left',
+  maxW,
   ...props
 }: ResponsiveTextProps) => {
-  // Handle responsive size
-  const responsiveSize = useBreakpointValue(
-    typeof size === 'string' 
-      ? { base: size } 
-      : size,
-    { fallback: 'md' }
-  );
-
-  // Handle responsive weight
-  const responsiveWeight = useBreakpointValue(
-    typeof weight === 'string' 
-      ? { base: weight } 
-      : weight,
-    { fallback: 'normal' }
-  );
-
-  // Handle responsive line height
-  const responsiveLineHeight = useBreakpointValue(
-    typeof lineHeight === 'string' || typeof lineHeight === 'number'
-      ? { base: lineHeight }
-      : lineHeight,
-    { fallback: 'normal' }
-  );
-
-  // Handle responsive letter spacing
-  const responsiveLetterSpacing = useBreakpointValue(
-    typeof letterSpacing === 'string'
-      ? { base: letterSpacing }
-      : letterSpacing,
-    { fallback: 'normal' }
-  );
-
-  // Handle responsive text alignment
-  const responsiveTextAlign = useBreakpointValue(
-    typeof textAlign === 'string'
-      ? { base: textAlign }
-      : textAlign,
-    { fallback: 'left' }
-  );
+  const responsiveSize = useResponsiveProp(size, 'md');
+  const responsiveWeight = useResponsiveProp(weight, 'normal');
+  const responsiveLineHeight = useResponsiveProp(lineHeight, 'normal');
+  const responsiveLetterSpacing = useResponsiveProp(letterSpacing, 'normal');
+  const responsiveTextAlign = useResponsiveProp(textAlign as string, 'left');
+  const responsiveMaxW = useResponsiveProp(maxW as string | number | undefined, undefined);
 
   return (
     <Text
@@ -66,7 +48,8 @@ const ResponsiveText = ({
       fontWeight={responsiveWeight}
       lineHeight={responsiveLineHeight}
       letterSpacing={responsiveLetterSpacing}
-      textAlign={responsiveTextAlign}
+      textAlign={responsiveTextAlign as TextProps['textAlign']}
+      maxW={responsiveMaxW}
       {...props}
     >
       {children}
