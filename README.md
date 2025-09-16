@@ -1,26 +1,30 @@
 # Kweli - Modern Feedback Collection Platform
 
-Kweli is a responsive web application built with React, TypeScript, and Chakra UI for collecting and managing user feedback, bug reports, and feature requests. The platform provides an intuitive interface for users to submit feedback and for administrators to view and manage submissions.
+Kweli is a responsive web application built with React, TypeScript, and Chakra UI for collecting and managing user feedback, bug reports, and feature requests. The platform provides an intuitive interface for users to submit feedback and for administrators to view and manage submissions with geographic insights.
 
 ## Features
 
 - 🎨 **Modern UI/UX** - Built with Chakra UI for a clean, responsive design
+- 🗺️ **Interactive Maps** - Visualize feedback data with interactive Kenya county maps
 - 🌓 **Dark/Light Mode** - Toggle between color schemes
 - 📝 **Feedback Forms** - Easy-to-use forms for submitting feedback and bug reports
-- 📊 **Dashboard** - View and manage all feedback submissions
+- 📊 **Data Visualization** - Interactive charts and maps for feedback analysis
 - ⚡ **Fast** - Built with Vite for optimal performance
-- 🔒 **Secure** - Type-safe with TypeScript
-- 📱 **Mobile-First** - Optimized for low-bandwidth connections
-- 📡 **Offline Support** - Submit feedback even without internet connection
+- 🔒 **Type-Safe** - Built with TypeScript for better developer experience
+- 📱 **Mobile-First** - Optimized for all device sizes
+- 🔄 **Real-time Updates** - React Query for efficient data fetching and caching
 
 ## Tech Stack
 
 - ⚛️ React 18 with TypeScript
 - 🎨 Chakra UI for accessible components
+- 🗺️ D3.js for interactive data visualization
+- 📊 Recharts for data visualization
 - 🔄 React Query for data fetching and caching
-- 📱 Vite for fast development and building
-- 🔧 PWA with offline support
+- 🚀 Vite for fast development and building
 - 🌐 React Router for navigation
+- 🛠️ GeoJSON for geographic data
+- 🔍 ESLint & Prettier for code quality
 
 ## Getting Started
 
@@ -41,7 +45,16 @@ Kweli is a responsive web application built with React, TypeScript, and Chakra U
    ```
 4. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-### Building for Production
+## Recent Improvements
+
+- 🛠️ Enhanced map components with better error handling
+- 🐛 Fixed TypeScript type issues in map components
+- 📈 Improved performance of map rendering
+- 📱 Better mobile responsiveness for map interactions
+- 🔍 Added detailed error logging for debugging
+- 🎨 Improved UI feedback during loading states
+
+## Building for Production
 
 ```bash
 # Build the app for production
