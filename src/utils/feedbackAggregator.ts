@@ -1,11 +1,5 @@
 import type { Feedback } from '../types/feedback';
-
-interface CountyData {
-  name: string;
-  count: number;
-  issues: string[];
-  color: string;
-}
+import type { CountyData } from '../types/map';
 
 export function aggregateFeedbackByCounty(feedbacks: Feedback[]): Record<string, CountyData> {
   const countyData: Record<string, CountyData> = {};

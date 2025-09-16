@@ -1,742 +1,260 @@
+import React, { useState } from 'react';
+import { Helmet } from 'react-helmet';
 import { 
   Box, 
+  Button, 
+  Card, 
+  CardContent, 
+  Chip,
   Container, 
-  Heading, 
-  VStack, 
-  HStack, 
-  Text, 
-  useColorModeValue, 
-  SimpleGrid, 
-  Stat, 
-  StatHelpText,
-  Icon,
-  Flex,
-  useBreakpointValue,
-  Progress,
-  Badge,
-  Tabs,
-  TabList,
-  TabPanels,
-  Tab,
-  TabPanel
-} from '@chakra-ui/react';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip as RechartsTooltip, 
-  ResponsiveContainer, 
-  PieChart, 
-  Pie, 
-  Cell,
-  Legend
-} from 'recharts';
-import { Helmet } from 'react-helmet-async';
-import { 
-  FiTrendingUp, 
-  FiAlertCircle, 
-  FiUsers, 
-  FiFilter,
-  FiPieChart,
-  FiBarChart2,
-  FiCalendar,
-  FiTag,
-  FiMessageSquare
-} from 'react-icons/fi';
-import { useState } from 'react';
+  Divider, 
+  Paper, 
+  Stack, 
+  Tab, 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableContainer, 
+  TableHead, 
+  TableRow, 
+  Tabs, 
+  Typography
+} from '@mui/material';
+import {
+  BarChart as BarChartIcon,
+  PieChart as PieChartIcon,
+  FileDownload as FileDownloadIcon,
+  SentimentDissatisfied as SentimentDissatisfiedIcon,
+  SentimentNeutral as SentimentNeutralIcon,
+  SentimentSatisfiedAlt as SentimentSatisfiedAltIcon,
+  TableChart as TableChartIcon,
+  Tag as TagIcon,
+  People as PeopleIcon
+} from '@mui/icons-material';
 
-interface CategoryData {
-  name: string;
-  value: number;
-  color: string;
-  subcategories: Array<{
-    name: string;
-    value: number;
-  }>;
+interface FeedbackItem {
+  id: number;
+  type: 'bug' | 'suggestion' | 'feature';
+  message: string;
+  category: string;
+  sentiment: 'positive' | 'neutral' | 'negative';
+  date: string;
+  votes: number;
 }
 
-interface FeedbackData {
-  totalResponses: number;
-  averageRating: number;
-  responseRate: number;
-  categories: CategoryData[];
-  monthlyTrend: Array<{
-    name: string;
-    value: number;
-  }>;
-  sentiment: {
-    positive: number;
-    neutral: number;
-    negative: number;
+const tabOptions = [
+  { label: 'Overview', icon: <BarChartIcon /> },
+  { label: 'Trends', icon: <PieChartIcon /> },
+  { label: 'Feedback', icon: <TableChartIcon /> },
+] as const;
+
+const ReportsPage: React.FC = () => {
+  const [tabValue, setTabValue] = useState<number>(0);
+
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
   };
-  recentFeedback: Array<{
-    id: number;
-    type: string;
-    summary: string;
-    sentiment: string;
-    date: string;
-    category: string;
-    votes: number;
-  }>;
-}
 
-const ErrorFallback = () => (
-  <Box 
-    p={6} 
-    bg="red.50" 
-    color="red.600" 
-    borderRadius="xl"
-    borderWidth="1px"
-    borderColor="red.200"
-    textAlign="center"
-    maxW="2xl"
-    mx="auto"
-    my={8}
-  >
-    <Heading size="md" mb={3}>Something went wrong</Heading>
-    <Text mb={4}>We're having trouble loading the reports dashboard. Our team has been notified.</Text>
-    <Text fontSize="sm" color="red.500">Please try refreshing the page or come back later.</Text>
-  </Box>
-);
+  const stats = [
+    { label: 'Total Feedback', value: '1,234' },
+    { label: 'Avg. Rating', value: '4.2' },
+    { label: 'Response Rate', value: '89%' },
+    { label: 'Active Users', value: '2.1k' },
+  ] as const;
 
-const feedbackData: FeedbackData = {
-  totalResponses: 1248,
-  averageRating: 4.2,
-  responseRate: 0.78, 
-  categories: [
-    {
-      name: 'Level 1',
-      value: 40,
-      color: '#4F46E5',
-      subcategories: [
-        { name: 'Subcategory A', value: 15 },
-        { name: 'Subcategory B', value: 15 },
-        { name: 'Subcategory C', value: 10 }
-      ]
-    },
-    {
-      name: 'Level 2',
-      value: 30,
-      color: '#EC4899',
-      subcategories: [
-        { name: 'Subcategory D', value: 10 },
-        { name: 'Subcategory E', value: 15 },
-        { name: 'Subcategory F', value: 5 }
-      ]
-    },
-    {
-      name: 'Level 3',
-      value: 20,
-      color: '#F59E0B',
-      subcategories: [
-        { name: 'Subcategory G', value: 5 },
-        { name: 'Subcategory H', value: 10 },
-        { name: 'Subcategory I', value: 5 }
-      ]
-    },
-    {
-      name: 'Level 4',
-      value: 10,
-      color: '#10B981',
-      subcategories: [
-        { name: 'Subcategory J', value: 3 },
-        { name: 'Subcategory K', value: 4 },
-        { name: 'Subcategory L', value: 3 }
-      ]
-    }
-  ],
-  monthlyTrend: [
-    { name: 'Jan', value: 65 },
-    { name: 'Feb', value: 78 },
-    { name: 'Mar', value: 92 },
-    { name: 'Apr', value: 84 },
-    { name: 'May', value: 110 },
-    { name: 'Jun', value: 125 },
-  ],
-  sentiment: {
-    positive: 65,
-    neutral: 25,
-    negative: 10,
-  },
-  recentFeedback: [
+  const feedbackData: FeedbackItem[] = [
     {
       id: 1,
-      type: 'feature',
-      summary: 'Add dark mode support',
-      sentiment: 'positive',
-      date: '2023-06-15',
-      category: 'UI/UX',
-      votes: 42,
+      type: 'bug',
+      message: 'The login button is not working on mobile devices',
+      category: 'Authentication',
+      sentiment: 'negative',
+      date: '2023-05-15T10:30:00Z',
+      votes: 24,
     },
     {
       id: 2,
-      type: 'bug',
-      summary: 'Login page not loading on mobile',
-      sentiment: 'negative',
-      date: '2023-06-14',
-      category: 'Authentication',
-      votes: 18,
+      type: 'feature',
+      message: 'Add dark mode support',
+      category: 'UI/UX',
+      sentiment: 'positive',
+      date: '2023-05-14T14:22:00Z',
+      votes: 45,
     },
-  ],
-};
+    {
+      id: 3,
+      type: 'suggestion',
+      message: 'Improve the search functionality',
+      category: 'Search',
+      sentiment: 'neutral',
+      date: '2023-05-13T09:15:00Z',
+      votes: 12,
+    },
+  ];
 
-const StatCard = ({ 
-  icon, 
-  title, 
-  value, 
-  change, 
-  isPositive = true,
-  description 
-}: { 
-  icon: any; 
-  title: string; 
-  value: string | number; 
-  change?: string; 
-  isPositive?: boolean;
-  description?: string;
-}) => {
-  const bg = useColorModeValue('white', 'gray.750');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
-  
   return (
-    <Box 
-      bg={bg}
-      p={6}
-      borderRadius="xl"
-      borderWidth="1px"
-      borderColor={borderColor}
-      boxShadow="sm"
-      height="100%"
-      _hover={{
-        transform: 'translateY(-2px)',
-        boxShadow: 'md',
-        transition: 'all 0.2s',
-      }}
-    >
-      <HStack spacing={3} mb={4}>
-        <Flex
-          align="center"
-          justify="center"
-          w={10}
-          h={10}
-          borderRadius="lg"
-          bg={isPositive ? 'blue.50' : 'red.50'}
-          color={isPositive ? 'blue.500' : 'red.500'}
-          flexShrink={0}
-        >
-          <Icon as={icon} w={5} h={5} />
-        </Flex>
-        <Box>
-          <Text fontSize="sm" fontWeight="medium" color="gray.500">
-            {title}
-          </Text>
-          <Text fontSize="2xl" fontWeight="bold" color={useColorModeValue('gray.800', 'white')}>
-            {value}
-          </Text>
+    <Box component="section" sx={{ px: { xs: 2, sm: 4, md: 6 }, py: 4, width: '100%' }}>
+      <Container maxWidth={false} sx={{ maxWidth: 'xl' }}>
+        <Helmet>
+          <title>Reports | Feedback Analytics</title>
+        </Helmet>
+
+        <Box mb={6}>
+          <Typography variant="h4" component="h1" gutterBottom>
+            Feedback Analytics
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Track and analyze user feedback to improve your product
+          </Typography>
         </Box>
-      </HStack>
-      {change && (
-        <Stat>
-          <StatHelpText color={isPositive ? 'green.500' : 'red.500'} mb={0} mt={2}>
-            <HStack spacing={1}>
-              <Icon as={isPositive ? FiTrendingUp : FiAlertCircle} />
-              <span>{change}</span>
-            </HStack>
-          </StatHelpText>
-        </Stat>
-      )}
-      {description && (
-        <Text fontSize="sm" color="gray.500" mt={2}>
-          {description}
-        </Text>
-      )}
-    </Box>
-  );
-};
 
-const SentimentMeter = ({ 
-  positive, 
-  neutral, 
-  negative 
-}: { 
-  positive: number; 
-  neutral: number; 
-  negative: number 
-}) => {
-  return (
-    <VStack spacing={4} align="stretch" mt={4}>
-      <Box>
-        <HStack justify="space-between" mb={1}>
-          <HStack spacing={2}>
-            <Box w={3} h={3} bg="green.500" borderRadius="full" />
-            <Text fontSize="sm">Positive</Text>
-          </HStack>
-          <Text fontWeight="medium">{positive}%</Text>
-        </HStack>
-        <Progress value={positive} size="sm" colorScheme="green" borderRadius="full" />
-      </Box>
-      <Box>
-        <HStack justify="space-between" mb={1}>
-          <HStack spacing={2}>
-            <Box w={3} h={3} bg="gray.400" borderRadius="full" />
-            <Text fontSize="sm">Neutral</Text>
-          </HStack>
-          <Text fontWeight="medium">{neutral}%</Text>
-        </HStack>
-        <Progress value={neutral} size="sm" bg="gray.100" borderRadius="full" />
-      </Box>
-      <Box>
-        <HStack justify="space-between" mb={1}>
-          <HStack spacing={2}>
-            <Box w={3} h={3} bg="red.500" borderRadius="full" />
-            <Text fontSize="sm">Negative</Text>
-          </HStack>
-          <Text fontWeight="medium">{negative}%</Text>
-        </HStack>
-        <Progress value={negative} size="sm" colorScheme="red" borderRadius="full" />
-      </Box>
-    </VStack>
-  );
-};
+        {/* Stats Grid */}
+        <Box sx={{ width: '100%' }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 3, mb: 6 }}>
+            {stats.map((stat, index) => (
+              <Card key={index}>
+                <CardContent>
+                  <Typography variant="subtitle1" color="text.secondary" gutterBottom>
+                    {stat.label}
+                  </Typography>
+                  <Typography variant="h4" component="div">
+                    {stat.value}
+                  </Typography>
+                  </CardContent>
+                </Card>
+            ))}
+          </Box>
+        </Box>
 
-const renderLabelContent = (props: { name?: string; percent?: number }) => {
-  const { name = '', percent = 0 } = props;
-  return `${name}: ${(percent * 100).toFixed(0)}%`;
-};
-
-const CategoryPieChart = ({ data }: { data: CategoryData[] }) => {
-  const mainCategories = data.map(category => ({
-    name: category.name,
-    value: category.value,
-    color: category.color
-  }));
-
-  // Get subcategories for the second level
-  const allSubcategories = data.flatMap(category => 
-    category.subcategories.map(sub => ({
-      ...sub,
-      parent: category.name,
-      color: category.color
-    }))
-  );
-
-  return (
-    <Box>
-      <Tabs variant="enclosed" colorScheme="blue" mb={4}>
-        <TabList>
-          <Tab>Main Categories</Tab>
-          <Tab>Subcategories</Tab>
-        </TabList>
-        <TabPanels>
-          <TabPanel p={0} pt={4}>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={mainCategories}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  dataKey="value"
-                  label={renderLabelContent}
-                >
-                  {mainCategories.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <RechartsTooltip 
-                  formatter={(value: number, name: string, props: any) => [
-                    value,
-                    props.payload.name,
-                  ]}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </TabPanel>
-          <TabPanel p={0} pt={4}>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={allSubcategories}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={5}
-                  dataKey="value"
-                  label={renderLabelContent}
-                >
-                  {allSubcategories.map((entry, index) => (
-                    <Cell key={`subcell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <RechartsTooltip 
-                  formatter={(value: number, name: string, props: any) => [
-                    value,
-                    `${props.payload.parent} - ${props.payload.name}`,
-                  ]}
-                />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </TabPanel>
-        </TabPanels>
-      </Tabs>
-    </Box>
-  );
-};
-
-const TrendChart = ({ 
-  data 
-}: { 
-  data: Array<{ name: string; value: number }> 
-}) => {
-  return (
-    <ResponsiveContainer width="100%" height={300}>
-      <BarChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-        <XAxis dataKey="name" />
-        <YAxis />
-        <RechartsTooltip 
-          formatter={(value) => [`${value} responses`, '']}
-          labelFormatter={(label) => `Month: ${label}`}
-        />
-        <Bar dataKey="value" fill="#4F46E5" radius={[4, 4, 0, 0]}>
-          {data.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill="#4F46E5" />
-          ))}
-        </Bar>
-      </BarChart>
-    </ResponsiveContainer>
-  );
-};
-
-const ReportsPage = () => {
-  const bg = useColorModeValue('gray.50', 'gray.900');
-  const cardBg = useColorModeValue('white', 'gray.750');
-  const isMobile = useBreakpointValue({ base: true, md: false });
-
-  return (
-    <Box bg={bg} minH="100vh">
-      <Helmet>
-        <title>Feedback Reports - Kweli</title>
-        <meta name="description" content="View and manage all feedback, bug reports, and feature requests." />
-      </Helmet>
-      
-      {/* Header Section */}
-      <Box bg={useColorModeValue('white', 'gray.800')} boxShadow="sm">
-        <Container maxW="7xl" py={8} px={{ base: 4, md: 8 }}>
-          <VStack spacing={2} align="stretch">
-            <HStack justify="space-between" align="center">
-              <Box>
-                <Heading as="h1" size="2xl" fontWeight="bold" color={useColorModeValue('gray.800', 'white')}>
-                  Feedback Analytics
-                </Heading>
-                <Text color={useColorModeValue('gray.600', 'gray.300')} mt={2}>
-                  Track and analyze user feedback to improve your product
-                </Text>
-              </Box>
-              {!isMobile && (
-                <HStack spacing={4}>
-                  <Box
-                    as="button"
-                    px={4}
-                    py={2}
-                    borderRadius="lg"
-                    borderWidth="1px"
-                    borderColor={useColorModeValue('gray.200', 'gray.700')}
-                    _hover={{
-                      bg: useColorModeValue('gray.50', 'gray.700'),
-                    }}
-                  >
-                    <HStack spacing={2}>
-                      <Icon as={FiFilter} />
-                      <Text>Filter</Text>
-                    </HStack>
-                  </Box>
-                  <Box
-                    as="button"
-                    px={4}
-                    py={2}
-                    bg="blue.600"
-                    color="white"
-                    borderRadius="lg"
-                    _hover={{
-                      bg: 'blue.700',
-                    }}
-                  >
-                    Export Report
-                  </Box>
-                </HStack>
-              )}
-            </HStack>
-            <Box borderBottomWidth="1px" borderColor={useColorModeValue('gray.200', 'gray.700')} mt={4} />
-          </VStack>
-        </Container>
-      </Box>
-
-      {/* Main Content */}
-      <Box py={8}>
-        <Container maxW="7xl" px={{ base: 4, md: 8 }}>
-          {/* Summary Stats */}
-          <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6} mb={10}>
-            <StatCard 
-              icon={FiMessageSquare} 
-              title="Total Responses" 
-              value={feedbackData.totalResponses.toLocaleString()}
-              change="+12% from last month"
-              isPositive={true}
-              description="Total feedback received"
-            />
-            <StatCard 
-              icon={FiBarChart2} 
-              title="Avg. Rating" 
-              value={feedbackData.averageRating.toFixed(1)} 
-              change="+0.3 from last month" 
-              isPositive={true}
-              description="Out of 5"
-            />
-            <StatCard 
-              icon={FiUsers} 
-              title="Response Rate" 
-              value={`${(feedbackData.responseRate * 100).toFixed(0)}%`} 
-              change="+5% from last month" 
-              isPositive={true}
-              description="Of total users"
-            />
-            <Box 
-              bg={cardBg}
-              p={6}
-              borderRadius="xl"
-              borderWidth="1px"
-              borderColor={useColorModeValue('gray.200', 'gray.700')}
-              boxShadow="sm"
-            >
-              <HStack spacing={3} mb={4}>
-                <Flex
-                  align="center"
-                  justify="center"
-                  w={10}
-                  h={10}
-                  borderRadius="lg"
-                  bg="purple.50"
-                  color="purple.500"
-                >
-                  <Icon as={FiPieChart} w={5} h={5} />
-                </Flex>
-                <Text fontSize="sm" fontWeight="medium" color="gray.500">
-                  Sentiment
-                </Text>
-              </HStack>
-              <SentimentMeter 
-                positive={feedbackData.sentiment.positive}
-                neutral={feedbackData.sentiment.neutral}
-                negative={feedbackData.sentiment.negative}
+        {/* Tabs Section */}
+        <Card>
+          <Tabs
+            value={tabValue}
+            onChange={handleTabChange}
+            variant="scrollable"
+            scrollButtons="auto"
+            sx={{ minHeight: 64 }}
+          >
+            {tabOptions.map((tab, index) => (
+              <Tab
+                key={index}
+                icon={tab.icon}
+                label={tab.label}
+                sx={{ minHeight: 64, minWidth: 'auto' }}
               />
-            </Box>
-          </SimpleGrid>
-
-          {/* Charts Section */}
-          <Box
-            bg={cardBg}
-            borderRadius="2xl"
-            boxShadow="lg"
-            p={{ base: 4, md: 6 }}
-            mb={8}
-          >
-            <Tabs variant="enclosed" colorScheme="blue">
-              <TabList>
-                <Tab>
-                  <HStack spacing={2}>
-                    <Icon as={FiBarChart2} />
-                    <Text>Trends</Text>
-                  </HStack>
-                </Tab>
-                <Tab>
-                  <HStack spacing={2}>
-                    <Icon as={FiPieChart} />
-                    <Text>Categories</Text>
-                  </HStack>
-                </Tab>
-              </TabList>
-              <TabPanels>
-                <TabPanel px={0}>
-                  <Box h="300px" mt={4}>
-                    <TrendChart data={feedbackData.monthlyTrend} />
-                  </Box>
-                </TabPanel>
-                <TabPanel px={0}>
-                  <Box h="300px" mt={4}>
-                    <CategoryPieChart data={feedbackData.categories} />
-                  </Box>
-                </TabPanel>
-              </TabPanels>
-            </Tabs>
-          </Box>
-
-          {/* Recent Feedback */}
-          <Box
-            bg={cardBg}
-            borderRadius="2xl"
-            boxShadow="lg"
-            p={{ base: 4, md: 6 }}
-          >
-            <HStack justify="space-between" mb={6}>
+            ))}
+          </Tabs>
+          <Divider />
+          <Box sx={{ p: 3 }}>
+            {tabValue === 0 && (
               <Box>
-                <Heading size="md" color={useColorModeValue('gray.800', 'white')}>
-                  Recent Feedback
-                </Heading>
-                <Text color={useColorModeValue('gray.600', 'gray.300')}>
-                  Latest user feedback and insights
-                </Text>
-              </Box>
-              <Box
-                as="button"
-                px={4}
-                py={2}
-                color="blue.600"
-                fontSize="sm"
-                fontWeight="medium"
-                _hover={{
-                  textDecoration: 'underline',
-                }}
-              >
-                View All
-              </Box>
-            </HStack>
-
-            <VStack spacing={4} align="stretch">
-              {feedbackData.recentFeedback.map((item) => (
-                <Box
-                  key={item.id}
-                  p={4}
-                  borderRadius="lg"
-                  borderWidth="1px"
-                  borderColor={useColorModeValue('gray.100', 'gray.700')}
-                  _hover={{
-                    bg: useColorModeValue('gray.50', 'gray.700'),
-                  }}
-                >
-                  <HStack spacing={3} align="flex-start">
-                    <Flex
-                      align="center"
-                      justify="center"
-                      w={8}
-                      h={8}
-                      borderRadius="md"
-                      bg={item.type === 'bug' ? 'red.50' : 'blue.50'}
-                      color={item.type === 'bug' ? 'red.500' : 'blue.500'}
-                      flexShrink={0}
-                      mt={1}
-                    >
-                      <Icon as={item.type === 'bug' ? FiAlertCircle : FiMessageSquare} w={4} h={4} />
-                    </Flex>
-                    <Box flex={1}>
-                      <HStack spacing={2} mb={1}>
-                        <Text fontWeight="medium" color={useColorModeValue('gray.800', 'white')}>
-                          {item.summary}
-                        </Text>
-                        <Badge 
-                          colorScheme={
-                            item.sentiment === 'positive' ? 'green' : 
-                            item.sentiment === 'negative' ? 'red' : 'gray'
-                          }
-                          variant="subtle"
-                          fontSize="xs"
-                          textTransform="none"
-                        >
-                          {item.sentiment}
-                        </Badge>
-                      </HStack>
-                      <HStack spacing={4} fontSize="sm" color={useColorModeValue('gray.600', 'gray.300')}>
-                        <HStack spacing={1}>
-                          <Icon as={FiCalendar} w={3} h={3} />
-                          <Text>{item.date}</Text>
-                        </HStack>
-                        <HStack spacing={1}>
-                          <Icon as={FiTag} w={3} h={3} />
-                          <Text>{item.category}</Text>
-                        </HStack>
-                        <HStack spacing={1}>
-                          <Icon as={FiUsers} w={3} h={3} />
-                          <Text>{item.votes} votes</Text>
-                        </HStack>
-                      </HStack>
-                    </Box>
-                    <Box
-                      as="button"
-                      px={3}
-                      py={1}
-                      borderRadius="md"
-                      fontSize="sm"
-                      fontWeight="medium"
-                      bg={useColorModeValue('gray.100', 'gray.700')}
-                      _hover={{
-                        bg: useColorModeValue('gray.200', 'gray.600'),
-                      }}
-                    >
-                      Details
-                    </Box>
-                  </HStack>
+                <Typography variant="h6" gutterBottom>
+                  Feedback Overview
+                </Typography>
+                <Box sx={{ height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Typography variant="body1" color="text.secondary">
+                    Feedback trend chart will be displayed here
+                  </Typography>
                 </Box>
-              ))}
-            </VStack>
-          </Box>
-
-          {/* Action Items */}
-          <Box
-            mt={8}
-            p={6}
-            bgGradient="linear(to-r, blue.50, purple.50)"
-            _dark={{ bgGradient: 'linear(to-r, blue.900, purple.900)' }}
-            borderRadius="2xl"
-            textAlign="center"
-          >
-            <Heading size="md" mb={2} color={useColorModeValue('gray.800', 'white')}>
-              Ready to dive deeper?
-            </Heading>
-            <Text color={useColorModeValue('gray.600', 'gray.300')} mb={6} maxW="2xl" mx="auto">
-              Export your feedback data for further analysis or share these insights with your team.
-            </Text>
-            <HStack spacing={4} justify="center">
-              <Box
-                as="button"
-                px={6}
-                py={2}
-                bg="white"
-                color="blue.600"
-                borderRadius="lg"
-                fontWeight="medium"
-                _dark={{ bg: 'gray.800', color: 'white' }}
-                _hover={{
-                  transform: 'translateY(-1px)',
-                  boxShadow: 'sm',
-                }}
-              >
-                Export Data
               </Box>
-              <Box
-                as="button"
-                px={6}
-                py={2}
-                bg="blue.600"
-                color="white"
-                borderRadius="lg"
-                fontWeight="medium"
-                _hover={{
-                  bg: 'blue.700',
-                  transform: 'translateY(-1px)',
-                  boxShadow: 'sm',
-                }}
-              >
-                Share Report
+            )}
+            {tabValue === 1 && (
+              <Box>
+                <Typography variant="h6" gutterBottom>
+                  Feedback by Category
+                </Typography>
+                <Box sx={{ height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Typography variant="body1" color="text.secondary">
+                    Category distribution chart will be displayed here
+                  </Typography>
+                </Box>
               </Box>
-            </HStack>
+            )}
+            {tabValue === 2 && (
+              <Box>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+                  <Typography variant="h6">
+                    Recent Feedback
+                  </Typography>
+                  <Button 
+                    variant="outlined" 
+                    startIcon={<FileDownloadIcon />}
+                    size="small"
+                  >
+                    Export
+                  </Button>
+                </Stack>
+                <TableContainer component={Paper} variant="outlined">
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Type</TableCell>
+                        <TableCell>Message</TableCell>
+                        <TableCell>Category</TableCell>
+                        <TableCell>Sentiment</TableCell>
+                        <TableCell>Date</TableCell>
+                        <TableCell>Votes</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {feedbackData.map((feedback) => (
+                        <TableRow key={feedback.id} hover>
+                          <TableCell>
+                            <Chip 
+                              label={feedback.type}
+                              color={
+                                feedback.type === 'bug' ? 'error' : 
+                                feedback.type === 'feature' ? 'success' : 'info'
+                              }
+                              size="small"
+                              variant="outlined"
+                            />
+                          </TableCell>
+                          <TableCell>{feedback.message}</TableCell>
+                          <TableCell>
+                            <Chip 
+                              icon={<TagIcon fontSize="small" />} 
+                              label={feedback.category} 
+                              size="small" 
+                              variant="outlined"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Box sx={{ 
+                              display: 'flex', 
+                              alignItems: 'center',
+                              color: 
+                                feedback.sentiment === 'positive' ? 'success.main' :
+                                feedback.sentiment === 'negative' ? 'error.main' :
+                                'warning.main'
+                            }}>
+                              {feedback.sentiment === 'positive' ? (
+                                <SentimentSatisfiedAltIcon fontSize="small" sx={{ mr: 0.5 }} />
+                              ) : feedback.sentiment === 'negative' ? (
+                                <SentimentDissatisfiedIcon fontSize="small" sx={{ mr: 0.5 }} />
+                              ) : (
+                                <SentimentNeutralIcon fontSize="small" sx={{ mr: 0.5 }} />
+                              )}
+                              {feedback.sentiment.charAt(0).toUpperCase() + feedback.sentiment.slice(1)}
+                            </Box>
+                          </TableCell>
+                          <TableCell>{new Date(feedback.date).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            <Stack direction="row" alignItems="center" spacing={0.5}>
+                              <PeopleIcon fontSize="small" color="action" />
+                              <Typography variant="body2">{feedback.votes}</Typography>
+                            </Stack>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Box>
+            )}
           </Box>
-        </Container>
-      </Box>
+        </Card>
+      </Container>
     </Box>
   );
 };
